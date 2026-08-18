@@ -1,0 +1,3790 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Relayless</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+
+<style>
+:root{
+  --ink:#171717;
+  --ink-2:#222222;
+  --ink-3:#303030;
+  --cream:#f7f2e8;
+  --cream-2:#fffaf0;
+  --cream-3:#efe7d8;
+  --orange:#f28b30;
+  --orange-2:#ffad54;
+  --orange-soft:#fff0dc;
+  --muted:#7b756d;
+  --line:#dfd5c5;
+  --line-dark:rgba(255,255,255,.10);
+  --green:#2f9d78;
+  --red:#c75444;
+  --shadow:0 18px 45px rgba(52,35,19,.08);
+  --shadow-dark:0 18px 50px rgba(0,0,0,.22);
+}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0}
+body{
+  background:var(--cream);
+  color:var(--ink);
+  font-family:"Manrope",system-ui,sans-serif;
+  overflow:hidden;
+}
+
+/*
+  IMPORTANT:
+  Every major Relayless column is a bounded flex/grid child.
+  min-height:0 is required or Chromium can let a child grow instead
+  of becoming scrollable.
+*/
+#app,
+.sidebar,
+.content,
+#chatView{
+  min-height:0;
+}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.mono{font-family:"Fira Code",monospace}
+::selection{background:var(--orange);color:#111}
+/* Visible scrollbars throughout Relayless */
+*{
+  scrollbar-width:auto;
+  scrollbar-color:#b8763d rgba(0,0,0,.08);
+}
+::-webkit-scrollbar{
+  width:11px;
+  height:11px;
+}
+::-webkit-scrollbar-thumb{
+  background:#b8763d;
+  border-radius:999px;
+  border:3px solid transparent;
+  background-clip:padding-box;
+}
+::-webkit-scrollbar-thumb:hover{
+  background:#e48b3e;
+  border:2px solid transparent;
+  background-clip:padding-box;
+}
+::-webkit-scrollbar-track{
+  background:rgba(0,0,0,.055);
+}
+::-webkit-scrollbar-corner{
+  background:transparent;
+}
+
+/* Keep the scroll thumb easy to grab on a school laptop / touchpad. */
+.chatBody::-webkit-scrollbar,
+#homeView::-webkit-scrollbar,
+.sideScroll::-webkit-scrollbar,
+.modal::-webkit-scrollbar{
+  width:13px;
+}
+.sidebar ::-webkit-scrollbar-track{
+  background:#171717;
+}
+.sidebar ::-webkit-scrollbar-thumb{
+  background:#5a4636;
+  border:3px solid #171717;
+}
+.sidebar ::-webkit-scrollbar-thumb:hover{
+  background:#f28b30;
+}
+
+.middleScrollActive{
+  cursor:grabbing!important;
+  user-select:none!important;
+}
+.middleScrollActive *{
+  cursor:grabbing!important;
+  user-select:none!important;
+}
+
+/* ---------- login ---------- */
+#loginScreen{
+  width:100%;height:100%;
+  display:grid;
+  grid-template-columns:minmax(320px,520px) 1fr;
+  background:
+    radial-gradient(circle at 76% 25%,rgba(242,139,48,.12),transparent 0 24%),
+    linear-gradient(135deg,#f8f3e9,#fffaf2);
+}
+.loginLeft{
+  background:#181818;
+  color:white;
+  padding:48px;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  overflow:hidden;
+}
+.loginLeft::after{
+  content:"";
+  width:330px;height:330px;
+  border-radius:50%;
+  border:55px solid rgba(242,139,48,.13);
+  position:absolute;
+  right:-180px;top:-120px;
+}
+.brand{
+  display:flex;align-items:center;gap:11px;
+  font-weight:800;font-size:19px;
+  position:relative;z-index:2;
+}
+.brandMark{
+  width:34px;height:34px;border-radius:11px;
+  background:var(--orange);
+  color:#111;
+  display:grid;place-items:center;
+  font-family:"Fira Code",monospace;
+  font-weight:800;
+}
+.loginPitch{
+  margin:auto 0;
+  max-width:360px;
+  position:relative;z-index:2;
+}
+.loginKicker{
+  color:var(--orange-2);
+  font:600 10px "Fira Code",monospace;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.loginPitch h1{
+  margin:14px 0 12px;
+  font-size:42px;
+  line-height:1.04;
+  letter-spacing:-.04em;
+}
+.loginPitch p{color:#aaa;line-height:1.7;font-size:13px}
+.privateCard{
+  position:relative;z-index:2;
+  border:1px solid var(--line-dark);
+  background:rgba(255,255,255,.04);
+  border-radius:17px;
+  padding:15px;
+  color:#aaa;
+  font-size:10px;
+  line-height:1.6;
+}
+.privateCard b{color:#fff}
+.loginRight{
+  display:grid;
+  place-items:center;
+  padding:40px;
+}
+.loginCard{
+  width:min(470px,100%);
+  background:rgba(255,250,240,.88);
+  border:1px solid var(--line);
+  border-radius:24px;
+  box-shadow:var(--shadow);
+  padding:30px;
+  backdrop-filter:blur(18px);
+}
+.loginCard h2{font-size:25px;margin:0 0 7px;letter-spacing:-.03em}
+.loginCard p{font-size:12px;color:var(--muted);line-height:1.6;margin:0 0 22px}
+.label{
+  display:block;
+  font:600 9px "Fira Code",monospace;
+  letter-spacing:.11em;
+  color:#7c746a;
+  margin:14px 0 7px;
+  text-transform:uppercase;
+}
+.field{
+  width:100%;
+  border:1px solid var(--line);
+  background:#fffdf8;
+  color:#1b1b1b;
+  border-radius:12px;
+  padding:11px 13px;
+  outline:none;
+}
+.field:focus{
+  border-color:rgba(242,139,48,.7);
+  box-shadow:0 0 0 4px rgba(242,139,48,.09);
+}
+.field::placeholder{color:#afa79b}
+.btn{
+  border:1px solid var(--line);
+  background:#fffdf8;
+  color:#29251f;
+  border-radius:11px;
+  padding:9px 12px;
+  font-size:11px;
+  font-weight:700;
+  transition:.14s;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 7px 18px rgba(50,38,22,.08)}
+.btn.primary{
+  background:var(--orange);
+  color:#17120d;
+  border-color:var(--orange);
+}
+.btn.primary:hover{background:var(--orange-2)}
+.btn.dark{
+  background:#202020;
+  color:#fff;
+  border-color:#202020;
+}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+#loginBtn{width:100%;margin-top:9px;padding:12px}
+#loginError{
+  min-height:17px;
+  margin-top:8px;
+  font:500 9px "Fira Code",monospace;
+  color:var(--red);
+}
+.loginFoot{
+  border-top:1px solid var(--line);
+  margin-top:18px;
+  padding-top:15px;
+  color:#8a8379;
+  font-size:10px;
+  line-height:1.6;
+}
+
+/* ---------- app ---------- */
+#app{
+  width:100%;height:100%;
+  display:none;
+  grid-template-columns:250px minmax(0,1fr);
+}
+.sidebar{
+  background:#191919;
+  color:#fff;
+  border-right:1px solid #292929;
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+.sideTop{padding:20px 15px 14px}
+.sideBrand{
+  display:flex;align-items:center;gap:9px;
+  font-weight:800;font-size:15px;
+}
+.sideBrand .brandMark{width:30px;height:30px;border-radius:10px}
+.meCard{
+  margin-top:17px;
+  border:1px solid var(--line-dark);
+  background:#202020;
+  border-radius:15px;
+  padding:11px;
+  display:flex;
+  gap:9px;
+  align-items:center;
+}
+.avatar{
+  width:31px;height:31px;
+  border-radius:10px;
+  background:#2d2d2d;
+  border:1px solid #3a3a3a;
+  display:grid;place-items:center;
+  font:700 10px "Fira Code",monospace;
+  flex:0 0 auto;
+}
+.meCopy{min-width:0;flex:1}
+.meName{
+  font-size:10px;font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.meStatus{
+  font:500 8px "Fira Code",monospace;
+  color:#888;margin-top:3px;
+}
+.dot{
+  display:inline-block;
+  width:6px;height:6px;border-radius:50%;
+  background:#555;margin-right:5px
+}
+.dot.online{background:var(--orange)}
+.sideScroll{
+  flex:1;
+  min-height:0;
+  overflow-y:scroll;
+  overflow-x:hidden;
+  scrollbar-gutter:stable;
+  overscroll-behavior:contain;
+  padding:5px 8px 14px
+}
+.navSection{margin-top:12px}
+.navHead{
+  display:flex;align-items:center;
+  height:29px;
+  padding:0 8px;
+  color:#737373;
+  font:600 8px "Fira Code",monospace;
+  letter-spacing:.12em;
+}
+.navHead span{flex:1}
+.iconButton{
+  width:25px;height:25px;border:0;
+  border-radius:8px;
+  background:transparent;color:#777;
+  display:grid;place-items:center;
+  font-size:16px;
+}
+.iconButton:hover{background:#292929;color:#fff}
+.navItem{
+  width:100%;
+  border:0;
+  background:transparent;
+  color:#aaa;
+  border-radius:10px;
+  padding:8px 9px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  text-align:left;
+  min-width:0;
+  margin:2px 0;
+}
+.navItem:hover{background:#242424;color:#fff}
+.navItem.active{
+  background:var(--orange);
+  color:#17120d;
+}
+
+.onlineSectionCount{
+  min-width:22px;
+  height:18px;
+  padding:0 6px;
+  border-radius:999px;
+  background:#252525;
+  color:#8e8e8e;
+  display:grid;
+  place-items:center;
+  font:600 7px "Fira Code",monospace;
+}
+.onlinePerson{
+  width:100%;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 7px 7px 9px;
+  color:#aaa;
+  margin:2px 0;
+}
+.onlinePerson:hover{background:#242424;color:#fff}
+.onlinePerson.self{color:#777}
+.onlinePersonMain{
+  min-width:0;
+  flex:1;
+  border:0;
+  background:transparent;
+  color:inherit;
+  padding:0;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  text-align:left;
+}
+.onlinePersonDot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--orange);
+  box-shadow:0 0 0 3px rgba(242,139,48,.09);
+  flex:0 0 auto;
+}
+.onlinePersonName{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:9px;
+  font-weight:650;
+}
+.onlineYou{
+  color:#626262;
+  font:500 7px "Fira Code",monospace;
+}
+.onlineQuick{
+  display:flex;
+  gap:3px;
+  flex:0 0 auto;
+}
+.onlineQuick button{
+  width:24px;height:24px;
+  border:1px solid #353535;
+  background:#202020;
+  color:#858585;
+  border-radius:7px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  font:700 8px "Fira Code",monospace;
+}
+.onlineQuick button:hover{
+  background:var(--orange);
+  border-color:var(--orange);
+  color:#16110c;
+}
+.navIcon{
+  width:21px;height:21px;
+  display:grid;place-items:center;
+  border-radius:7px;
+  background:rgba(255,255,255,.06);
+  font:600 10px "Fira Code",monospace;
+  flex:0 0 auto;
+}
+.navItem.active .navIcon{background:rgba(0,0,0,.08)}
+.navText{
+  min-width:0;flex:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:10px;font-weight:650;
+}
+.presence{width:6px;height:6px;border-radius:50%;background:#444}
+.presence.online{background:#fff}
+.sideBottom{
+  border-top:1px solid #292929;
+  padding:10px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+.sideBottom .btn{
+  background:#202020;color:#aaa;border-color:#303030;
+  font-size:8px;padding:8px 6px
+}
+.sideBottom .btn:hover{color:#fff;background:#282828}
+.sideBottom .wide{grid-column:1/-1}
+
+/* ---------- content / home ---------- */
+.content{
+  min-width:0;
+  min-height:0;
+  height:100%;
+  background:
+    radial-gradient(circle at 88% 4%,rgba(242,139,48,.08),transparent 0 21%),
+    var(--cream);
+  display:flex;
+  flex-direction:column;
+}
+.topbar{
+  height:62px;
+  padding:0 23px;
+  display:flex;
+  align-items:center;
+  border-bottom:1px solid rgba(208,195,175,.68);
+  background:rgba(247,242,232,.82);
+  backdrop-filter:blur(15px);
+}
+.topTitle{min-width:0;flex:1}
+.topTitle h1{
+  margin:0;font-size:12px;font-weight:800;letter-spacing:-.02em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.topTitle p{
+  margin:3px 0 0;
+  color:#887f73;
+  font:500 8px "Fira Code",monospace;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.topActions{display:flex;gap:7px}
+.topActions .btn{font-size:9px}
+#homeView{
+  flex:1;
+  min-height:0;
+  overflow-y:scroll;
+  overflow-x:hidden;
+  scrollbar-gutter:stable;
+  overscroll-behavior:contain;
+  padding:42px 7vw;
+}
+.eyebrow{
+  color:#987357;
+  font:600 9px "Fira Code",monospace;
+  letter-spacing:.15em;
+  text-transform:uppercase
+}
+.hero{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:30px;
+  margin-bottom:27px
+}
+.hero h2{
+  margin:10px 0 7px;
+  font-size:39px;
+  line-height:1.03;
+  letter-spacing:-.05em
+}
+.hero h2 em{color:#c36b22;font-style:italic;font-weight:500}
+.hero p{margin:0;color:var(--muted);font-size:12px;line-height:1.7;max-width:620px}
+.identityPill{
+  flex:0 0 auto;
+  border:1px solid #dfd2be;
+  background:rgba(255,250,240,.72);
+  border-radius:999px;
+  padding:9px 13px;
+  font:600 8px "Fira Code",monospace;
+  color:#786f63;
+}
+.identityPill span{color:var(--green)}
+.homeGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+.homeCard{
+  position:relative;
+  min-height:210px;
+  border:1px solid var(--line);
+  border-radius:20px;
+  background:rgba(255,250,240,.74);
+  padding:22px;
+  overflow:hidden;
+  box-shadow:0 8px 30px rgba(45,31,17,.035)
+}
+.homeCard.dark{
+  background:#1d1d1d;
+  color:#fff;
+  border-color:#1d1d1d;
+  box-shadow:var(--shadow-dark)
+}
+.cardKicker{
+  display:flex;align-items:center;gap:8px;
+  font:700 8px "Fira Code",monospace;
+  color:#a26838;letter-spacing:.1em;text-transform:uppercase
+}
+.dark .cardKicker{color:var(--orange-2)}
+.cardBubble{
+  width:27px;height:27px;border-radius:9px;
+  display:grid;place-items:center;
+  background:var(--orange-soft);
+  color:#b86520
+}
+.dark .cardBubble{background:#34302b;color:var(--orange-2)}
+.homeCard h3{font-size:19px;margin:18px 0 9px;letter-spacing:-.03em}
+.homeCard p{font-size:10px;line-height:1.65;color:#827a70;max-width:430px}
+.dark p{color:#aaa}
+.cardBottom{
+  position:absolute;left:22px;right:22px;bottom:20px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px
+}
+.cardNote{
+  font:500 8px "Fira Code",monospace;
+  color:#958b7e
+}
+.dark .cardNote{color:#777}
+.activityBlock{margin-top:28px}
+.activityHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.activityHead h3{margin:0;font-size:12px}
+.activityHead span{font:500 8px "Fira Code",monospace;color:#8d8377}
+.activityCard{
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:rgba(255,250,240,.72);
+  min-height:130px;
+  padding:16px;
+}
+.callHistoryItem{
+  display:flex;align-items:center;gap:10px;
+  padding:10px;border-radius:12px
+}
+.callHistoryItem:hover{background:#fffaf2}
+.callHistoryIcon{
+  width:32px;height:32px;border-radius:10px;
+  background:#f0e7d9;display:grid;place-items:center
+}
+.callHistoryText{flex:1;min-width:0}
+.callHistoryText b{display:block;font-size:10px}
+.callHistoryText span{display:block;font:500 8px "Fira Code",monospace;color:#8c8376;margin-top:3px}
+.emptyActivity{
+  min-height:95px;display:grid;place-items:center;
+  text-align:center;color:#958b7e;font-size:10px
+}
+
+/* ---------- chat ---------- */
+#chatView{
+  flex:1;min-height:0;
+  display:none;
+  flex-direction:column;
+}
+.chatBody{
+  flex:1;
+  min-height:0;
+  overflow-y:scroll;
+  overflow-x:hidden;
+  scrollbar-gutter:stable;
+  overscroll-behavior:contain;
+  padding:23px 27px 10px;
+}
+.chatIntro{
+  padding:18px 18px 20px;
+  border:1px solid rgba(210,198,180,.72);
+  background:rgba(255,250,240,.58);
+  border-radius:17px;
+  margin-bottom:16px
+}
+.chatIntro b{font-size:14px}
+.chatIntro p{margin:5px 0 0;color:#8b8174;font-size:10px}
+.messageRow{
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr);
+  gap:9px;
+  padding:7px 4px;
+  border-radius:12px
+}
+.messageRow:hover{background:rgba(255,250,240,.56)}
+.msgAvatar{
+  width:34px;height:34px;border-radius:11px;
+  background:#252525;color:#fff;
+  display:grid;place-items:center;
+  font:700 9px "Fira Code",monospace
+}
+.msgHead{display:flex;align-items:baseline;gap:7px}
+.msgAuthor{font-size:10px;font-weight:800}
+.msgTime{font:500 7px "Fira Code",monospace;color:#9d9283}
+.msgText{
+  font-size:11px;
+  line-height:1.58;
+  margin-top:2px;
+  color:#393530;
+  white-space:pre-wrap;
+  word-break:break-word
+}
+.delivery{
+  margin-top:3px;
+  font:500 7px "Fira Code",monospace;
+  color:#a39788
+}
+.delivery.failed{color:var(--red)}
+.systemMsg{
+  width:max-content;max-width:90%;
+  margin:8px auto;
+  border:1px solid #dfd3c2;
+  background:rgba(255,250,240,.72);
+  border-radius:999px;
+  padding:6px 10px;
+  font:500 8px "Fira Code",monospace;
+  color:#8c8173
+}
+.attachmentWrap{margin-top:7px;max-width:min(520px,92%)}
+.attachmentImage{
+  display:block;
+  max-width:100%;
+  max-height:390px;
+  border-radius:14px;
+  border:1px solid #d9ccb9;
+  background:#fff;
+  box-shadow:0 9px 24px rgba(43,31,19,.07)
+}
+.fileCard{
+  display:flex;align-items:center;gap:10px;
+  background:#fffaf2;
+  border:1px solid #ddd0bd;
+  border-radius:13px;
+  padding:10px 11px;
+  max-width:390px
+}
+.fileIcon{
+  width:35px;height:35px;border-radius:10px;
+  background:#292929;color:var(--orange-2);
+  display:grid;place-items:center;
+  font:700 8px "Fira Code",monospace
+}
+.fileMeta{min-width:0;flex:1}
+.fileMeta b{display:block;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fileMeta span{display:block;font:500 7px "Fira Code",monospace;color:#928779;margin-top:3px}
+.fileDownload{
+  text-decoration:none;color:#b76521;
+  font:700 8px "Fira Code",monospace
+}
+.typingBar{
+  min-height:20px;
+  padding:0 24px 3px;
+  font:500 8px "Fira Code",monospace;
+  color:#8c8173
+}
+.typingDots{display:inline-flex;gap:2px;margin-left:5px}
+.typingDots i{
+  width:3px;height:3px;border-radius:50%;
+  background:var(--orange);
+  animation:blink 1s infinite
+}
+.typingDots i:nth-child(2){animation-delay:.15s}
+.typingDots i:nth-child(3){animation-delay:.3s}
+@keyframes blink{0%,65%,100%{opacity:.25;transform:translateY(0)}35%{opacity:1;transform:translateY(-2px)}}
+.pendingTray{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior-x:contain;
+  scrollbar-gutter:stable;
+  padding:0 24px 8px;
+}
+.pendingCard{
+  width:205px;
+  flex:0 0 auto;
+  background:#fffaf2;
+  border:1px solid #ded1bf;
+  border-radius:13px;
+  padding:7px;
+  display:flex;align-items:center;gap:8px
+}
+.pendingPreview{
+  width:40px;height:40px;border-radius:9px;
+  background:#2a2a2a;color:var(--orange-2);
+  overflow:hidden;display:grid;place-items:center;
+  font:700 8px "Fira Code",monospace
+}
+.pendingPreview img{width:100%;height:100%;object-fit:cover}
+.pendingMeta{min-width:0;flex:1}
+.pendingMeta b{display:block;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pendingMeta span{display:block;font:500 7px "Fira Code",monospace;color:#938778;margin-top:3px}
+.pendingRemove{
+  border:0;background:transparent;color:#9a8f81;
+  width:24px;height:24px;border-radius:7px
+}
+.pendingRemove:hover{background:#f1e7d8;color:#222}
+.composerWrap{
+  padding:0 22px 18px;
+}
+.transferStatus{
+  min-height:16px;
+  padding:0 5px 4px;
+  font:500 8px "Fira Code",monospace;
+  color:#8b8175
+}
+.composer{
+  display:flex;align-items:flex-end;gap:6px;
+  border:1px solid #dbcfbd;
+  background:#fffaf2;
+  border-radius:16px;
+  padding:6px;
+  box-shadow:0 8px 26px rgba(50,35,19,.05)
+}
+.composer.dragActive{
+  outline:2px dashed rgba(242,139,48,.6);
+  outline-offset:3px
+}
+.composeBtn{
+  width:35px;height:35px;
+  border:0;border-radius:10px;
+  background:#f1e8db;color:#6f665c;
+  display:grid;place-items:center;
+  font-size:18px;
+  flex:0 0 auto
+}
+.composeBtn:hover{background:var(--orange-soft);color:#a65c20}
+#messageInput{
+  min-height:35px;max-height:150px;
+  flex:1;min-width:0;
+  border:0;outline:0;resize:none;
+  background:transparent;color:#25211d;
+  padding:8px 6px;
+  font-size:11px;
+  line-height:1.45;
+  overflow-y:auto
+}
+#messageInput::placeholder{color:#aaa093}
+.sendBtn{
+  min-width:63px;height:35px;
+  border:0;border-radius:10px;
+  background:#222;color:#fff;
+  font:700 8px "Fira Code",monospace
+}
+.sendBtn:hover{background:var(--orange);color:#18120c}
+.sendBtn:disabled,.composeBtn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ---------- modals ---------- */
+.modalOverlay{
+  position:fixed;inset:0;z-index:100;
+  background:rgba(17,17,17,.70);
+  backdrop-filter:blur(10px);
+  display:grid;place-items:center;padding:20px
+}
+.modal{
+  width:min(460px,100%);
+  max-height:calc(100vh - 40px);
+  overflow-y:auto;
+  overflow-x:hidden;
+  scrollbar-gutter:stable;
+  overscroll-behavior:contain;
+  border-radius:20px;
+  background:#fffaf2;
+  border:1px solid #ded1bf;
+  box-shadow:0 26px 90px rgba(0,0,0,.2);
+  padding:22px
+}
+.modal h2{margin:0 0 7px;font-size:18px}
+.modal p{margin:0 0 16px;color:#81786e;font-size:10px;line-height:1.6}
+.modal label{
+  display:block;margin:12px 0 6px;
+  font:600 8px "Fira Code",monospace;
+  color:#8b8174
+}
+.modalActions{display:flex;justify-content:flex-end;gap:7px;margin-top:16px}
+.modalError{min-height:15px;margin-top:7px;font:500 8px "Fira Code",monospace;color:var(--red)}
+.codeBox{
+  border:1px solid #ddd0bd;background:#f4ecdf;
+  border-radius:11px;padding:10px;
+  font:500 8px "Fira Code",monospace;
+  word-break:break-word;color:#655f58
+}
+.choiceRow{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.choiceCard{
+  text-align:left;border:1px solid #ddd0bd;background:#fffdf8;
+  border-radius:14px;padding:13px;color:#28231e
+}
+.choiceCard:hover{border-color:#eea765;background:#fff6e9}
+.choiceCard b{display:block;font-size:10px}
+.choiceCard span{display:block;font-size:8px;color:#8d8377;margin-top:4px}
+
+.settingsStack{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.settingRow{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  border:1px solid #dfd2bf;
+  background:#fffdf8;
+  border-radius:14px;
+  padding:12px;
+}
+.settingCopy{min-width:0;flex:1}
+.settingCopy b{display:block;font-size:10px}
+.settingCopy span{
+  display:block;
+  margin-top:4px;
+  color:#8c8276;
+  font-size:8px;
+  line-height:1.45;
+}
+.settingRow select{
+  min-width:135px;
+  border:1px solid #d8cab7;
+  border-radius:10px;
+  background:#f8f0e4;
+  color:#342e28;
+  padding:8px;
+  outline:none;
+  font:600 8px "Fira Code",monospace;
+}
+.switch{
+  position:relative;
+  width:38px;
+  height:22px;
+  flex:0 0 auto;
+}
+.switch input{opacity:0;width:0;height:0}
+.switchTrack{
+  position:absolute;inset:0;
+  border-radius:999px;
+  background:#d8cebf;
+  transition:.15s;
+}
+.switchTrack::after{
+  content:"";
+  position:absolute;
+  width:16px;height:16px;
+  left:3px;top:3px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 2px 7px rgba(0,0,0,.12);
+  transition:.15s;
+}
+.switch input:checked + .switchTrack{background:var(--orange)}
+.switch input:checked + .switchTrack::after{transform:translateX(16px)}
+.settingsHint{
+  margin-top:12px;
+  border-radius:12px;
+  background:#f3ebdf;
+  padding:10px 11px;
+  color:#8a8073;
+  font:500 8px/1.55 "Fira Code",monospace;
+}
+
+/* ---------- incoming + active calls ---------- */
+.incoming{
+  position:fixed;z-index:130;
+  right:20px;bottom:20px;
+  width:min(350px,calc(100vw - 40px));
+  background:#202020;color:#fff;
+  border:1px solid #343434;
+  border-radius:18px;
+  padding:16px;
+  box-shadow:var(--shadow-dark)
+}
+.incomingTop{display:flex;align-items:center;gap:10px}
+.incomingAvatar{
+  width:42px;height:42px;border-radius:13px;
+  background:var(--orange);color:#17120d;
+  display:grid;place-items:center;
+  font:800 13px "Fira Code",monospace
+}
+.incomingCopy{min-width:0}
+.incomingCopy b{font-size:11px}
+.incomingCopy span{display:block;margin-top:4px;color:#aaa;font:500 8px "Fira Code",monospace}
+.incomingActions{display:flex;gap:7px;margin-top:13px}
+.incomingActions .btn{flex:1}
+.callOverlay{
+  position:fixed;inset:0;z-index:120;
+  background:#141414;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 270px;
+  color:#fff
+}
+.callStage{
+  position:relative;
+  min-width:0;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 40%,#26211c,#111 55%)
+}
+#remoteVideo{
+  width:100%;height:100%;object-fit:contain;background:#111
+}
+.audioCenter{text-align:center}
+.audioAvatar{
+  width:110px;height:110px;border-radius:32px;
+  background:var(--orange);color:#17120d;
+  display:grid;place-items:center;
+  margin:0 auto 18px;
+  font:800 37px "Fira Code",monospace
+}
+.audioCenter h2{margin:0;font-size:23px}
+.audioCenter p{color:#888;font:500 9px "Fira Code",monospace}
+.callSide{
+  border-left:1px solid #2a2a2a;
+  background:#181818;
+  padding:16px;
+  display:flex;flex-direction:column;gap:9px
+}
+.callSideLabel{font:600 8px "Fira Code",monospace;color:#777}
+#localVideo{
+  width:100%;aspect-ratio:16/10;
+  object-fit:cover;border-radius:14px;
+  background:#222;border:1px solid #343434;
+  transform:scaleX(-1)
+}
+.callInfo{
+  border:1px solid #303030;background:#202020;
+  border-radius:14px;padding:12px
+}
+.callInfo b{display:block;font-size:10px}
+.callInfo span{display:block;color:#777;font:500 8px "Fira Code",monospace;margin-top:4px}
+.callControls{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:auto}
+.callControls .btn{background:#232323;color:#ddd;border-color:#343434}
+.callControls .btn:hover{background:#2b2b2b;color:#fff}
+.callControls .end{grid-column:1/-1;background:#c95b45;border-color:#c95b45;color:#fff}
+
+/* responsive */
+@media(max-width:900px){
+  #loginScreen{grid-template-columns:1fr}
+  .loginLeft{display:none}
+  #app{grid-template-columns:220px minmax(0,1fr)}
+  .homeGrid{grid-template-columns:1fr}
+  .hero{align-items:flex-start;flex-direction:column}
+}
+@media(max-width:650px){
+  #app{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .topbar{padding:0 14px}
+  #homeView{padding:26px 18px}
+  .hero h2{font-size:31px}
+  .chatBody{padding:18px 14px 8px}
+  .composerWrap{padding:0 12px 12px}
+  .typingBar,.pendingTray{padding-left:14px;padding-right:14px}
+  .callOverlay{grid-template-columns:1fr}
+  .callSide{
+    position:absolute;right:12px;bottom:12px;
+    width:160px;border:0;background:transparent;padding:0
+  }
+  .callSideLabel,.callInfo,.callControls{display:none}
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<section id="loginScreen">
+  <div class="loginLeft">
+    <div class="brand"><div class="brandMark">R</div>Relayless</div>
+
+    <div class="loginPitch">
+      <div class="loginKicker">Direct connection mode</div>
+      <h1>Your conversations, without the heavy stuff.</h1>
+      <p>Static-site friendly peer-to-peer messaging, groups, files, images, voice and video — tied to the username you come back with.</p>
+    </div>
+
+    <div class="privateCard">
+      <b>Local by design.</b><br>
+      Your contacts, groups and history stay on this browser. PeerJS is used for discovery/signaling; conversations travel over WebRTC.
+    </div>
+  </div>
+
+  <div class="loginRight">
+    <div class="loginCard">
+      <div class="loginKicker">Relayless identity</div>
+      <h2>Good to see you.</h2>
+      <p>Enter your username and password. Together they generate the same private P2P identity each time and restore that username's local conversations.</p>
+
+      <label class="label">Username</label>
+      <input id="usernameInput" class="field" maxlength="40" autocomplete="username" placeholder="Username">
+
+      <label class="label">Password</label>
+      <input id="passwordInput" class="field" type="password" minlength="2" autocomplete="current-password" placeholder="At least 2 characters">
+
+      <button id="loginBtn" class="btn primary">UNLOCK & GO ONLINE</button>
+      <div id="loginError"></div>
+
+      <div class="loginFoot">
+        Your password is never sent to other users or saved as plain text. It derives your P2P identity locally. Forgetting it means losing access to that exact identity.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APP -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="sideTop">
+      <div class="sideBrand"><div class="brandMark">R</div>Relayless</div>
+      <div class="meCard">
+        <div id="meAvatar" class="avatar">?</div>
+        <div class="meCopy">
+          <div id="meName" class="meName">@—</div>
+          <div class="meStatus"><span id="meDot" class="dot"></span><span id="meState">offline</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sideScroll">
+      <div class="navSection">
+        <div class="navHead"><span>Your space</span></div>
+        <button id="homeNav" class="navItem active">
+          <span class="navIcon">⌂</span><span class="navText">Home</span>
+        </button>
+        <button id="mainNav" class="navItem">
+          <span class="navIcon">#</span><span class="navText">Main</span>
+          <span id="mainPresence" class="presence"></span>
+        </button>
+        <button id="settingsNav" class="navItem">
+          <span class="navIcon">⚙</span><span class="navText">Settings</span>
+        </button>
+      </div>
+
+      <div id="onlineSection" class="navSection">
+        <div class="navHead">
+          <span>Online now</span>
+          <span id="onlineCount" class="onlineSectionCount">0</span>
+        </div>
+        <div id="onlineList"></div>
+      </div>
+
+      <div class="navSection">
+        <div class="navHead">
+          <span>Direct messages</span>
+          <button id="newDmBtn" class="iconButton" title="New DM">+</button>
+        </div>
+        <div id="dmList"></div>
+      </div>
+
+      <div class="navSection">
+        <div class="navHead">
+          <span>Groups</span>
+          <button id="newGroupBtn" class="iconButton" title="New group">+</button>
+        </div>
+        <div id="groupList"></div>
+      </div>
+    </div>
+
+    <div class="sideBottom">
+      <button id="exportBtn" class="btn">EXPORT</button>
+      <button id="importBtn" class="btn">IMPORT</button>
+      <input id="importFile" type="file" accept=".json,application/json" class="hidden">
+      <button id="copyUserBtn" class="btn">COPY USER</button>
+      <button id="logoutBtn" class="btn">LOCK</button>
+      <button id="deleteBtn" class="btn wide">DELETE LOCAL DATA</button>
+    </div>
+  </aside>
+
+  <section class="content">
+    <header class="topbar">
+      <div class="topTitle">
+        <h1 id="headerTitle">Home</h1>
+        <p id="headerSubtitle">direct connection mode</p>
+      </div>
+      <div class="topActions">
+        <button id="audioCallBtn" class="btn hidden">VOICE CALL</button>
+        <button id="videoCallBtn" class="btn primary hidden">VIDEO CALL</button>
+        <button id="groupInfoBtn" class="btn hidden">GROUP INFO</button>
+      </div>
+    </header>
+
+    <!-- HOME -->
+    <main id="homeView">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">Your private conversation space</div>
+          <h2>Good to see you, <em id="heroName">friend.</em></h2>
+          <p>Jump into the shared room, message somebody directly, or start a call. No servers, roles or profile setup — just conversations.</p>
+        </div>
+        <div class="identityPill"><span>●</span> identity saved on this device</div>
+      </div>
+
+      <div class="homeGrid">
+        <div class="homeCard">
+          <div class="cardKicker"><span class="cardBubble">#</span> Global room</div>
+          <h3>See who's around.</h3>
+          <p>Everyone using this Relayless build meets in one live P2P main room.</p>
+          <div class="cardBottom">
+            <span class="cardNote">Live while peers are online</span>
+            <button id="homeMainBtn" class="btn primary">OPEN #MAIN →</button>
+          </div>
+        </div>
+
+        <div class="homeCard dark">
+          <div class="cardKicker"><span class="cardBubble">@</span> Direct connection</div>
+          <h3>Reach someone directly.</h3>
+          <p>Open a DM by username, send messages and files, or jump straight into a voice or video call.</p>
+          <div class="cardBottom">
+            <span class="cardNote">WebRTC / PeerJS</span>
+            <button id="homeDmBtn" class="btn primary">NEW DM →</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="activityBlock">
+        <div class="activityHead">
+          <h3>Recent calls</h3>
+          <span>stored locally · only you can see this</span>
+        </div>
+        <div id="callHistory" class="activityCard"></div>
+      </div>
+    </main>
+
+    <!-- CHAT -->
+    <main id="chatView">
+      <div id="chatBody" class="chatBody"></div>
+      <div id="typingStatus" class="typingBar"></div>
+      <div id="pendingTray" class="pendingTray hidden"></div>
+
+      <div class="composerWrap">
+        <div id="transferStatus" class="transferStatus"></div>
+        <form id="composer" class="composer">
+          <button id="attachBtn" type="button" class="composeBtn" title="Attach files">＋</button>
+          <input id="fileInput" type="file" multiple hidden>
+          <textarea id="messageInput" rows="1" placeholder="Message" disabled></textarea>
+          <button id="sendBtn" class="sendBtn" disabled>SEND</button>
+        </form>
+      </div>
+    </main>
+  </section>
+</div>
+
+<!-- MODAL -->
+<div id="modalOverlay" class="modalOverlay hidden">
+  <div id="modal" class="modal"></div>
+</div>
+
+<!-- INCOMING CALL -->
+<div id="incomingCall" class="incoming hidden">
+  <div class="incomingTop">
+    <div id="incomingAvatar" class="incomingAvatar">?</div>
+    <div class="incomingCopy">
+      <b id="incomingName">@unknown</b>
+      <span id="incomingType">Incoming call</span>
+    </div>
+  </div>
+  <div class="incomingActions">
+    <button id="declineCallBtn" class="btn dark">DECLINE</button>
+    <button id="acceptCallBtn" class="btn primary">ACCEPT</button>
+  </div>
+</div>
+
+<!-- ACTIVE CALL -->
+<div id="activeCall" class="callOverlay hidden">
+  <div class="callStage">
+    <video id="remoteVideo" autoplay playsinline></video>
+    <div id="audioCenter" class="audioCenter hidden">
+      <div id="audioAvatar" class="audioAvatar">?</div>
+      <h2 id="audioName">@unknown</h2>
+      <p id="audioStatus">Connecting…</p>
+    </div>
+  </div>
+
+  <aside class="callSide">
+    <div class="callSideLabel">YOUR CAMERA</div>
+    <video id="localVideo" autoplay muted playsinline></video>
+
+    <div class="callInfo">
+      <b id="callPeer">@unknown</b>
+      <span id="callStatus">connecting</span>
+    </div>
+
+    <div class="callControls">
+      <button id="muteBtn" class="btn">MUTE</button>
+      <button id="cameraBtn" class="btn">CAMERA OFF</button>
+      <button id="endCallBtn" class="btn end">END CALL</button>
+    </div>
+  </aside>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+
+/* ---------- app constants ---------- */
+const APP_PROTOCOL = "relayless-warm-v1";
+const PEER_NAMESPACE = "relayless-warm-v1_";
+const PROFILE_KEY = "relaylessWarm.profile.v1";
+const NETWORK_KEY_PREFIX = "relaylessWarm.networks.v1.";
+const CALL_HISTORY_PREFIX = "relaylessWarm.calls.v1.";
+const DB_NAME = "relaylessWarm.db.v1";
+const DB_VERSION = 1;
+const MAX_FILE_BYTES = 12 * 1024 * 1024;
+const MAX_PENDING_ATTACHMENTS = 5;
+const MAX_RECLAIM_ATTEMPTS = 9;
+const MAIN_HOST_ID = "relayless-warm-global-main-v1";
+const SETTINGS_KEY_PREFIX = "relaylessWarm.settings.v1.";
+const CREDENTIAL_KEY_PREFIX = "relaylessWarm.credential.v2.";
+const SECURE_PEER_NAMESPACE = "relayless-secure-v2_";
+
+/* ---------- state ---------- */
+let peer = null;
+let myUsername = "";
+let myPeerId = "";
+let myIdentityKey = "";
+let loginGeneration = 0;
+let loginRetryTimer = null;
+let loginInProgress = false;
+
+const connections = new Map();
+const connectionStates = new Map();
+const dmMessages = new Map();
+const groups = new Map();
+
+let activeContext = null; // null means home
+let mainRoom = null;
+
+const onlineUsers = new Map(); // username -> currently advertised peer id
+const knownPeerIds = new Map(); // username -> trusted peer id (TOFU)
+let userSettings = {
+  enterToSend:true,
+  showOnline:true,
+  showOnlineRoster:true,
+  allowCalls:"everyone"
+};
+
+const typingUsers = new Map();
+const typingTimers = new Map();
+const typingSendState = new Map();
+
+let pendingAttachments = [];
+let db = null;
+
+let pendingCall = null;
+let activeCall = null;
+let localCallStream = null;
+let remoteCallStream = null;
+let activeCallKind = null;
+let activeCallPeer = null;
+
+/* ---------- helpers ---------- */
+function cleanUsername(v){
+  return String(v||"").trim().toLowerCase().replace(/[^a-z0-9_-]/g,"").slice(0,40);
+}
+function cleanName(v,max=48){
+  return String(v||"").trim().replace(/\s+/g," ").slice(0,max);
+}
+function initial(v){return (String(v||"?").trim()[0]||"?").toUpperCase()}
+function uid(prefix="id"){
+  if(crypto.randomUUID)return prefix+"_"+crypto.randomUUID().replaceAll("-","").slice(0,16);
+  return prefix+"_"+Date.now().toString(36)+Math.random().toString(36).slice(2,10);
+}
+async function sha256Hex(text){
+  const data=new TextEncoder().encode(String(text));
+  const digest=await crypto.subtle.digest("SHA-256",data);
+  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+async function deriveIdentityKey(username,password){
+  const clean=cleanUsername(username);
+  const material=await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(String(password)),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const salt=new TextEncoder().encode("Relayless Secure Identity v2|"+clean);
+  const bits=await crypto.subtle.deriveBits(
+    {name:"PBKDF2",salt,iterations:180000,hash:"SHA-256"},
+    material,
+    256
+  );
+  return [...new Uint8Array(bits)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+async function identityVerifier(identityKey){
+  return sha256Hex("relayless-verifier|"+identityKey);
+}
+function securePeerId(identityKey){
+  return SECURE_PEER_NAMESPACE+"id_"+String(identityKey).slice(0,40);
+}
+function legacyUsernameFromPeerId(id){
+  const raw=String(id||"");
+  return cleanUsername(raw.startsWith(PEER_NAMESPACE)?raw.slice(PEER_NAMESPACE.length):"");
+}
+function credentialStorageKey(username){
+  return CREDENTIAL_KEY_PREFIX+cleanUsername(username);
+}
+function loadCredential(username){
+  try{
+    const raw=localStorage.getItem(credentialStorageKey(username));
+    return raw?JSON.parse(raw):null;
+  }catch{return null}
+}
+function saveCredential(username,verifier,peerId){
+  localStorage.setItem(credentialStorageKey(username),JSON.stringify({
+    username:cleanUsername(username),
+    verifier,
+    peerId,
+    savedAt:Date.now()
+  }));
+}
+function trustedPeerId(username){
+  username=cleanUsername(username);
+  const trusted=knownPeerIds.get(username)||"";
+  const live=onlineUsers.get(username)||"";
+
+  if(trusted&&live&&trusted!==live)return "";
+  return trusted||live||"";
+}
+function rememberPeerIdentity(username,peerId){
+  username=cleanUsername(username);
+  peerId=String(peerId||"");
+  if(!username||!peerId||username===myUsername)return true;
+
+  const trusted=knownPeerIds.get(username);
+  if(trusted&&trusted!==peerId)return false;
+
+  if(!trusted){
+    knownPeerIds.set(username,peerId);
+    saveNetworks();
+  }
+  return true;
+}
+function hasIdentityMismatch(username){
+  username=cleanUsername(username);
+  const trusted=knownPeerIds.get(username);
+  const live=onlineUsers.get(username);
+  return !!(trusted&&live&&trusted!==live);
+}
+function contextKey(ctx){
+  if(!ctx)return "home";
+  if(ctx.type==="main")return "main";
+  if(ctx.type==="dm")return "dm:"+ctx.id;
+  if(ctx.type==="group")return "group:"+ctx.id;
+  return "";
+}
+function contextsMatch(a,b){return contextKey(a)===contextKey(b)}
+function escapeHtml(v){
+  return String(v??"").replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[c]));
+}
+function timeLabel(ts){
+  try{return new Date(ts).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}catch{return ""}
+}
+function dateLabel(ts){
+  try{return new Date(ts).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}catch{return ""}
+}
+function formatBytes(n){
+  n=Number(n||0);
+  if(n<1024)return n+" B";
+  if(n<1024*1024)return (n/1024).toFixed(1)+" KB";
+  return (n/(1024*1024)).toFixed(1)+" MB";
+}
+function bytesToBlob(data,mime){
+  if(data instanceof ArrayBuffer)return new Blob([data],{type:mime||"application/octet-stream"});
+  if(ArrayBuffer.isView(data))return new Blob([data.buffer],{type:mime||"application/octet-stream"});
+  return new Blob([data],{type:mime||"application/octet-stream"});
+}
+function copyText(text){
+  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(text).catch(()=>fallbackCopy(text));
+  else fallbackCopy(text);
+}
+function fallbackCopy(text){
+  const ta=document.createElement("textarea");
+  ta.value=text;document.body.appendChild(ta);ta.select();
+  try{document.execCommand("copy")}catch{}
+  ta.remove();
+}
+function setCookie(name,value){
+  try{document.cookie=encodeURIComponent(name)+"="+encodeURIComponent(value)+";max-age=31536000;path=/;SameSite=Lax"}catch{}
+}
+function deleteCookie(name){
+  try{document.cookie=encodeURIComponent(name)+"=;max-age=0;path=/;SameSite=Lax"}catch{}
+}
+
+/* ---------- profile / network persistence ---------- */
+function saveProfile(username){
+  localStorage.setItem(PROFILE_KEY,JSON.stringify({username,savedAt:Date.now()}));
+  setCookie("relaylessWarmUsername",username);
+}
+function loadProfile(){
+  try{
+    const raw=localStorage.getItem(PROFILE_KEY);
+    if(!raw)return null;
+    const username=cleanUsername(JSON.parse(raw).username);
+    return username?{username}:null;
+  }catch{return null}
+}
+function forgetProfile(){
+  localStorage.removeItem(PROFILE_KEY);
+  deleteCookie("relaylessWarmUsername");
+}
+function networkStorageKey(){return NETWORK_KEY_PREFIX+myUsername}
+function settingsStorageKey(){return SETTINGS_KEY_PREFIX+myUsername}
+function loadUserSettings(){
+  const defaults={
+    enterToSend:true,
+    showOnline:true,
+    showOnlineRoster:true,
+    allowCalls:"everyone"
+  };
+  try{
+    const raw=localStorage.getItem(settingsStorageKey());
+    userSettings={...defaults,...(raw?JSON.parse(raw):{})};
+  }catch{
+    userSettings={...defaults};
+  }
+  if(!["everyone","known","nobody"].includes(userSettings.allowCalls)){
+    userSettings.allowCalls="everyone";
+  }
+}
+function saveUserSettings(){
+  if(!myUsername)return;
+  localStorage.setItem(settingsStorageKey(),JSON.stringify(userSettings));
+}
+function isKnownPerson(username){
+  username=cleanUsername(username);
+  if(dmMessages.has(username))return true;
+  for(const g of groups.values()){
+    if(g.members?.includes(username))return true;
+  }
+  return false;
+}
+function callAllowedFrom(username){
+  if(userSettings.allowCalls==="nobody")return false;
+  if(userSettings.allowCalls==="known")return isKnownPerson(username);
+  return true;
+}
+function saveNetworks(){
+  if(!myUsername)return;
+  const payload={
+    dms:[...dmMessages.keys()],
+    identities:Object.fromEntries(knownPeerIds),
+    groups:[...groups.values()].map(g=>({
+      id:g.id,
+      name:g.name,
+      owner:g.owner,
+      members:g.members
+    }))
+  };
+  localStorage.setItem(networkStorageKey(),JSON.stringify(payload));
+}
+function loadNetworks(){
+  dmMessages.clear();groups.clear();knownPeerIds.clear();
+  try{
+    const raw=localStorage.getItem(networkStorageKey());
+    if(!raw)return;
+    const data=JSON.parse(raw);
+
+    for(const [u,pid] of Object.entries(data.identities||{})){
+      const clean=cleanUsername(u);
+      if(clean&&clean!==myUsername&&typeof pid==="string"&&pid){
+        knownPeerIds.set(clean,pid);
+      }
+    }
+
+    for(const rawUser of data.dms||[]){
+      const u=cleanUsername(rawUser);
+      if(u&&u!==myUsername)getDmMessages(u);
+    }
+
+    for(const rawGroup of data.groups||[]){
+      if(!rawGroup?.id)continue;
+      const members=[...new Set((rawGroup.members||[]).map(cleanUsername).filter(Boolean))];
+      groups.set(rawGroup.id,{
+        id:rawGroup.id,
+        name:cleanName(rawGroup.name)||"Group",
+        owner:cleanUsername(rawGroup.owner),
+        members,
+        messages:[]
+      });
+    }
+  }catch(err){console.warn("network restore failed",err)}
+}
+
+/* ---------- call history ---------- */
+function callHistoryKey(){return CALL_HISTORY_PREFIX+myUsername}
+function loadCallHistory(){
+  try{
+    const x=JSON.parse(localStorage.getItem(callHistoryKey())||"[]");
+    return Array.isArray(x)?x:[];
+  }catch{return []}
+}
+function recordCall(peerName,kind,direction,status="ended"){
+  if(!myUsername)return;
+  const list=loadCallHistory();
+  list.unshift({peer:cleanUsername(peerName),kind,direction,status,ts:Date.now()});
+  localStorage.setItem(callHistoryKey(),JSON.stringify(list.slice(0,30)));
+  renderCallHistory();
+}
+function renderCallHistory(){
+  const box=$("callHistory");
+  if(!box)return;
+  const list=loadCallHistory().slice(0,8);
+  box.innerHTML="";
+  if(!list.length){
+    box.innerHTML='<div class="emptyActivity">Your call history will appear here after your first conversation.</div>';
+    return;
+  }
+
+  for(const item of list){
+    const row=document.createElement("div");row.className="callHistoryItem";
+    const icon=document.createElement("div");icon.className="callHistoryIcon";
+    icon.textContent=item.kind==="video"?"▣":"◖";
+    const text=document.createElement("div");text.className="callHistoryText";
+    const b=document.createElement("b");b.textContent="@"+item.peer+" · "+(item.kind==="video"?"Video":"Voice");
+    const s=document.createElement("span");s.textContent=(item.direction==="outgoing"?"Outgoing":"Incoming")+" · "+dateLabel(item.ts);
+    text.append(b,s);row.append(icon,text);box.appendChild(row);
+  }
+}
+
+/* ---------- IndexedDB message history ---------- */
+function openDb(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=()=>{
+      const d=req.result;
+      if(!d.objectStoreNames.contains("messages")){
+        const store=d.createObjectStore("messages",{keyPath:"storageId"});
+        store.createIndex("owner","owner",{unique:false});
+      }
+    };
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function ensureDb(){
+  if(db)return db;
+  db=await openDb();
+  return db;
+}
+async function persistMessage(scopeKey,msg){
+  if(!myUsername)return;
+  try{
+    const d=await ensureDb();
+    const record={
+      ...msg,
+      storageId:myUsername+"|"+scopeKey+"|"+msg.id,
+      owner:myUsername,
+      scopeKey
+    };
+    await new Promise((resolve,reject)=>{
+      const tx=d.transaction("messages","readwrite");
+      tx.objectStore("messages").put(record);
+      tx.oncomplete=()=>resolve();
+      tx.onerror=()=>reject(tx.error);
+    });
+  }catch(err){console.warn("message save failed",err)}
+}
+async function loadAllMessages(){
+  try{
+    const d=await ensureDb();
+    const records=await new Promise((resolve,reject)=>{
+      const tx=d.transaction("messages","readonly");
+      const req=tx.objectStore("messages").index("owner").getAll(myUsername);
+      req.onsuccess=()=>resolve(req.result||[]);
+      req.onerror=()=>reject(req.error);
+    });
+
+    records.sort((a,b)=>Number(a.timestamp||0)-Number(b.timestamp||0));
+
+    for(const r of records){
+      const msg={...r};delete msg.storageId;delete msg.owner;delete msg.scopeKey;
+
+      if(r.scopeKey==="main"){
+        if(!mainRoom.messages.some(x=>x.id===msg.id))mainRoom.messages.push(msg);
+      }else if(r.scopeKey.startsWith("dm:")){
+        const u=cleanUsername(r.scopeKey.slice(3));
+        if(u){
+          const list=getDmMessages(u);
+          if(!list.some(x=>x.id===msg.id))list.push(msg);
+        }
+      }else if(r.scopeKey.startsWith("group:")){
+        const id=r.scopeKey.slice(6);
+        const g=groups.get(id);
+        if(g){
+          g.messages=g.messages||[];
+          if(!g.messages.some(x=>x.id===msg.id))g.messages.push(msg);
+        }
+      }
+    }
+  }catch(err){console.warn("message load failed",err)}
+}
+
+/* ---------- message model ---------- */
+function getDmMessages(username){
+  username=cleanUsername(username);
+  if(!dmMessages.has(username))dmMessages.set(username,[]);
+  return dmMessages.get(username);
+}
+function messagesForContext(ctx){
+  if(!ctx)return [];
+  if(ctx.type==="main")return mainRoom?.messages||[];
+  if(ctx.type==="dm")return getDmMessages(ctx.id);
+  if(ctx.type==="group"){
+    const g=groups.get(ctx.id);
+    if(!g)return [];
+    g.messages=g.messages||[];
+    return g.messages;
+  }
+  return [];
+}
+async function addMessage(ctx,msg,persist=true){
+  const full={
+    id:msg.id||uid("m"),
+    timestamp:msg.timestamp||Date.now(),
+    author:cleanUsername(msg.author||myUsername),
+    kind:msg.kind||"text",
+    text:String(msg.text||""),
+    fileName:String(msg.fileName||""),
+    mime:String(msg.mime||""),
+    size:Number(msg.size||0),
+    blob:msg.blob||null,
+    system:!!msg.system,
+    status:msg.status||""
+  };
+
+  const list=messagesForContext(ctx);
+  if(full.id&&list.some(m=>m.id===full.id))return list.find(m=>m.id===full.id);
+  list.push(full);
+  if(list.length>350)list.splice(0,list.length-350);
+
+  if(persist)await persistMessage(contextKey(ctx),full);
+  if(contextsMatch(activeContext,ctx))renderMessages();
+  renderSidebar();
+  return full;
+}
+async function setMessageStatus(ctx,id,status){
+  const m=messagesForContext(ctx).find(x=>x.id===id);
+  if(!m)return;
+  m.status=status;
+  await persistMessage(contextKey(ctx),m);
+  if(contextsMatch(activeContext,ctx))renderMessages();
+}
+function systemMessage(ctx,text){
+  return addMessage(ctx,{author:"system",text,system:true});
+}
+
+/* ---------- modal ---------- */
+function showModal(html){
+  $("modal").innerHTML=html;
+  $("modalOverlay").classList.remove("hidden");
+}
+function closeModal(){
+  $("modalOverlay").classList.add("hidden");
+  $("modal").innerHTML="";
+}
+$("modalOverlay").addEventListener("click",e=>{
+  if(e.target===$("modalOverlay"))closeModal();
+});
+
+/* ---------- P2P DM connection ---------- */
+function setConnectionState(username,state){
+  connectionStates.set(cleanUsername(username),state);
+  renderSidebar();renderHeader();
+}
+function surfaceIncomingDm(username){
+  username=cleanUsername(username);
+  if(!username||username===myUsername)return;
+  getDmMessages(username);
+  saveNetworks();
+  renderSidebar();
+}
+function attachConnection(conn,remoteUsername=""){
+  const username=cleanUsername(
+    remoteUsername ||
+    conn.metadata?.from ||
+    legacyUsernameFromPeerId(conn.peer)
+  );
+
+  if(!username||username===myUsername){
+    try{conn.close()}catch{}
+    return;
+  }
+
+  const trusted=knownPeerIds.get(username)||"";
+  const advertised=onlineUsers.get(username)||"";
+
+  // A first-time peer must match the live directory. Previously trusted hidden
+  // peers are also allowed. This prevents arbitrary metadata from impersonating
+  // another username in an incoming connection.
+  if(
+    (trusted&&trusted!==conn.peer) ||
+    (advertised&&advertised!==conn.peer) ||
+    (!trusted&&!advertised)
+  ){
+    try{conn.close()}catch{}
+    setConnectionState(username,"identity mismatch");
+    return;
+  }
+
+  if(!rememberPeerIdentity(username,conn.peer)){
+    try{conn.close()}catch{}
+    setConnectionState(username,"identity mismatch");
+    return;
+  }
+
+  surfaceIncomingDm(username);
+
+  const old=connections.get(username);
+  if(old&&old!==conn){try{old.close()}catch{}}
+  connections.set(username,conn);
+  setConnectionState(username,"connecting");
+
+  conn.on("open",()=>{
+    connections.set(username,conn);
+    setConnectionState(username,"online");
+    try{conn.send({app:APP_PROTOCOL,type:"hello",from:myUsername})}catch{}
+
+    for(const g of groups.values()){
+      if(g.owner===username){
+        try{conn.send({app:APP_PROTOCOL,type:"group_sync_request",groupId:g.id})}catch{}
+      }
+    }
+  });
+
+  conn.on("data",data=>handleData(username,data).catch(err=>console.warn("packet error",err)));
+
+  conn.on("close",()=>{
+    if(connections.get(username)===conn)connections.delete(username);
+    setConnectionState(username,"offline");
+  });
+  conn.on("error",()=>setConnectionState(username,"offline"));
+}
+function ensureConnection(username){
+  username=cleanUsername(username);
+  if(!username||username===myUsername)return Promise.reject(new Error("invalid peer"));
+
+  if(hasIdentityMismatch(username)){
+    setConnectionState(username,"identity mismatch");
+    return Promise.reject(new Error("Identity mismatch for @"+username));
+  }
+
+  const existing=connections.get(username);
+  if(existing?.open)return Promise.resolve(existing);
+  if(existing&&!existing.open){try{existing.close()}catch{}}
+
+  const targetPeerId=trustedPeerId(username);
+  if(!targetPeerId){
+    setConnectionState(username,"offline");
+    return Promise.reject(new Error("@"+username+" must be online once before this device can trust their identity."));
+  }
+
+  setConnectionState(username,"connecting");
+
+  const conn=peer.connect(targetPeerId,{
+    serialization:"binary",
+    reliable:true,
+    metadata:{app:APP_PROTOCOL,from:myUsername}
+  });
+
+  // IMPORTANT: on an outgoing connection metadata.from is OUR username.
+  // Pass the intended remote username explicitly so the connection is not
+  // mistaken for a self-connection and closed.
+  attachConnection(conn,username);
+
+  return new Promise((resolve,reject)=>{
+    let done=false;
+    const timer=setTimeout(()=>{
+      if(done)return;done=true;reject(new Error("offline"));
+    },6000);
+
+    conn.on("open",()=>{
+      if(done)return;done=true;clearTimeout(timer);resolve(conn)
+    });
+    conn.on("error",err=>{
+      if(done)return;
+      done=true;
+      clearTimeout(timer);
+      setConnectionState(username,"offline");
+      reject(err);
+    });
+    conn.on("close",()=>{
+      if(done)return;
+      done=true;
+      clearTimeout(timer);
+      setConnectionState(username,"offline");
+      reject(new Error("closed"));
+    });
+  });
+}
+async function sendTo(username,payload){
+  const c=await ensureConnection(username);
+  c.send({app:APP_PROTOCOL,...payload});
+}
+
+/* ---------- groups ---------- */
+function snapshotGroup(g){
+  return {id:g.id,name:g.name,owner:g.owner,members:g.members};
+}
+function applyGroupSnapshot(snap){
+  if(!snap?.id)return;
+  const old=groups.get(snap.id);
+  groups.set(snap.id,{
+    id:snap.id,
+    name:cleanName(snap.name)||old?.name||"Group",
+    owner:cleanUsername(snap.owner),
+    members:[...new Set((snap.members||[]).map(cleanUsername).filter(Boolean))],
+    messages:old?.messages||[]
+  });
+  saveNetworks();
+  renderAll();
+}
+function syncGroup(id){
+  const g=groups.get(id);
+  if(!g||g.owner===myUsername)return;
+  sendTo(g.owner,{type:"group_sync_request",groupId:id}).catch(()=>{});
+}
+
+/* ---------- typing ---------- */
+function typingBucket(ctx){
+  const key=contextKey(ctx);
+  if(!typingUsers.has(key))typingUsers.set(key,new Set());
+  return typingUsers.get(key);
+}
+function setRemoteTyping(ctx,username,active){
+  username=cleanUsername(username);
+  if(!username||username===myUsername)return;
+
+  const key=contextKey(ctx);
+  const bucket=typingBucket(ctx);
+  const timerKey=key+"|"+username;
+
+  if(typingTimers.has(timerKey)){
+    clearTimeout(typingTimers.get(timerKey));
+    typingTimers.delete(timerKey);
+  }
+
+  if(active){
+    bucket.add(username);
+    typingTimers.set(timerKey,setTimeout(()=>{
+      bucket.delete(username);
+      typingTimers.delete(timerKey);
+      if(contextsMatch(activeContext,ctx))renderTypingStatus();
+    },3200));
+  }else bucket.delete(username);
+
+  if(contextsMatch(activeContext,ctx))renderTypingStatus();
+}
+function renderTypingStatus(){
+  const el=$("typingStatus");
+  if(!activeContext){el.textContent="";return}
+  const names=[...typingBucket(activeContext)];
+  if(!names.length){el.textContent="";return}
+
+  if(names.length===1){
+    el.innerHTML=`<b>@${escapeHtml(names[0])}</b> is typing<span class="typingDots"><i></i><i></i><i></i></span>`;
+  }else if(names.length===2){
+    el.innerHTML=`<b>@${escapeHtml(names[0])}</b> and <b>@${escapeHtml(names[1])}</b> are typing<span class="typingDots"><i></i><i></i><i></i></span>`;
+  }else{
+    el.innerHTML=`<b>${names.length} people</b> are typing<span class="typingDots"><i></i><i></i><i></i></span>`;
+  }
+}
+async function sendTypingPacket(active){
+  if(!activeContext||!peer?.open)return;
+  const ctx=activeContext;
+
+  try{
+    if(ctx.type==="dm"){
+      await sendTo(ctx.id,{type:"dm_typing",active:!!active});
+    }else if(ctx.type==="group"){
+      const g=groups.get(ctx.id);if(!g)return;
+      for(const u of g.members){
+        if(u===myUsername)continue;
+        try{await sendTo(u,{type:"group_typing_delivery",groupId:g.id,username:myUsername,active:!!active})}catch{}
+      }
+    }
+  }catch{}
+}
+function onComposerTyping(){
+  if(!activeContext)return;
+  autoGrowComposer();
+
+  const key=contextKey(activeContext);
+  let state=typingSendState.get(key)||{active:false,stopTimer:null,lastSent:0};
+  const hasText=$("messageInput").value.length>0;
+  const now=Date.now();
+
+  if(hasText&&(!state.active||now-state.lastSent>1800)){
+    state.active=true;
+    state.lastSent=now;
+    sendTypingPacket(true);
+  }
+
+  if(state.stopTimer)clearTimeout(state.stopTimer);
+  state.stopTimer=setTimeout(()=>{
+    state.active=false;
+    sendTypingPacket(false);
+  },1700);
+
+  typingSendState.set(key,state);
+}
+function stopOwnTyping(ctx){
+  if(!ctx)return;
+  const state=typingSendState.get(contextKey(ctx));
+  if(state?.stopTimer)clearTimeout(state.stopTimer);
+  if(state?.active)sendTypingPacket(false);
+  typingSendState.delete(contextKey(ctx));
+}
+
+/* ---------- main room host election ---------- */
+function createMainRoom(){
+  return {
+    ready:false,
+    role:"joining",
+    hostPeer:null,
+    conn:null,
+    clients:new Set(),
+    names:new Map(),
+    visible:new Map(),
+    messages:[]
+  };
+}
+function applyOnlineUsers(users){
+  onlineUsers.clear();
+
+  for(const entry of users||[]){
+    const username=cleanUsername(typeof entry==="string"?entry:entry?.username);
+    const peerId=typeof entry==="string"?"":String(entry?.peerId||"");
+    if(!username)continue;
+
+    if(peerId)onlineUsers.set(username,peerId);
+    else if(!onlineUsers.has(username))onlineUsers.set(username,"");
+
+    if(peerId&&!knownPeerIds.has(username)&&username!==myUsername){
+      knownPeerIds.set(username,peerId);
+    }
+  }
+
+  saveNetworks();
+  renderOnlineUsers();
+}
+function hostPresenceSnapshot(){
+  const users=[];
+  if(userSettings.showOnline)users.push({username:myUsername,peerId:myPeerId});
+
+  for(const [peerId,username] of mainRoom.names){
+    if(mainRoom.visible.get(peerId)!==false){
+      users.push({username,peerId});
+    }
+  }
+
+  const unique=new Map();
+  for(const item of users){
+    if(!unique.has(item.username))unique.set(item.username,item);
+  }
+  return [...unique.values()].sort((a,b)=>a.username.localeCompare(b.username));
+}
+function broadcastPresenceList(){
+  if(!mainRoom||mainRoom.role!=="host")return;
+  const users=hostPresenceSnapshot();
+  applyOnlineUsers(users);
+  broadcastMain({type:"presence-list",users});
+}
+function updatePresenceAdvertising(){
+  saveUserSettings();
+  renderOnlineUsers();
+
+  if(!mainRoom?.ready)return;
+  if(mainRoom.role==="host"){
+    broadcastPresenceList();
+  }else if(mainRoom.conn?.open){
+    try{mainRoom.conn.send({type:"presence-update",visible:!!userSettings.showOnline})}catch{}
+  }
+}
+function broadcastMain(payload,except=null){
+  for(const c of mainRoom.clients){
+    if(c===except||!c.open)continue;
+    try{c.send(payload)}catch{}
+  }
+}
+function attachMainClient(c){
+  mainRoom.clients.add(c);
+
+  c.on("data",async data=>{
+    if(!data||typeof data!=="object")return;
+
+    if(data.type==="hello"){
+      const username=cleanUsername(data.username);
+      const visible=data.visible!==false;
+
+      const existingPeer=[...mainRoom.names.entries()].find(([pid,u])=>u===username&&pid!==c.peer)?.[0];
+      const conflictsWithHost=username===myUsername&&c.peer!==myPeerId;
+
+      if(existingPeer||conflictsWithHost){
+        try{c.send({type:"username-conflict",username})}catch{}
+        setTimeout(()=>{try{c.close()}catch{}},100);
+        return;
+      }
+
+      mainRoom.names.set(c.peer,username);
+      mainRoom.visible.set(c.peer,visible);
+      try{
+        c.send({
+          type:"welcome",
+          messages:mainRoom.messages.filter(m=>!m.system&&m.kind==="text").slice(-80),
+          users:hostPresenceSnapshot()
+        });
+      }catch{}
+      if(visible){
+        broadcastMain({type:"presence",action:"join",username},c);
+        systemMessage({type:"main"},"@"+username+" joined #main");
+      }
+      broadcastPresenceList();
+      renderHeader();
+      return;
+    }
+
+    if(data.type==="presence-update"){
+      mainRoom.visible.set(c.peer,data.visible!==false);
+      broadcastPresenceList();
+      return;
+    }
+
+    if(data.type==="message"){
+      const msg=data.message;
+      if(!msg?.id)return;
+      await addMessage({type:"main"},msg);
+      broadcastMain({type:"message",message:msg},c);
+      return;
+    }
+
+    if(data.type==="attachment"){
+      const p=data.message;
+      if(!p?.id)return;
+      const blob=bytesToBlob(p.data,p.mime);
+      const local={...p,blob};delete local.data;
+      await addMessage({type:"main"},local);
+      broadcastMain({type:"attachment",message:p},c);
+    }
+  });
+
+  c.on("close",()=>{
+    const username=mainRoom.names.get(c.peer);
+    const wasVisible=mainRoom.visible.get(c.peer)!==false;
+    mainRoom.clients.delete(c);
+    mainRoom.names.delete(c.peer);
+    mainRoom.visible.delete(c.peer);
+    if(username&&wasVisible){
+      broadcastMain({type:"presence",action:"leave",username});
+      systemMessage({type:"main"},"@"+username+" left #main");
+    }
+    broadcastPresenceList();
+    renderHeader();
+  });
+}
+function becomeMainHost(candidate){
+  mainRoom.role="host";
+  mainRoom.hostPeer=candidate;
+  mainRoom.ready=true;
+  $("mainPresence").classList.add("online");
+  candidate.on("connection",attachMainClient);
+  systemMessage({type:"main"},"#main is online");
+  broadcastPresenceList();
+  renderAll();
+}
+function connectMainHost(){
+  mainRoom.role="client";
+  const c=peer.connect(MAIN_HOST_ID,{reliable:true,serialization:"binary"});
+  mainRoom.conn=c;
+
+  c.on("open",()=>{
+    mainRoom.ready=true;
+    $("mainPresence").classList.add("online");
+    c.send({type:"hello",username:myUsername,peerId:myPeerId,visible:!!userSettings.showOnline});
+    renderAll();
+  });
+
+  c.on("data",async data=>{
+    if(!data||typeof data!=="object")return;
+
+    if(data.type==="welcome"){
+      for(const m of data.messages||[]){
+        await addMessage({type:"main"},m);
+      }
+      applyOnlineUsers(data.users||[]);
+      return;
+    }
+
+    if(data.type==="presence-list"){
+      applyOnlineUsers(data.users||[]);
+      return;
+    }
+
+    if(data.type==="username-conflict"){
+      $("transferStatus").textContent="Another live session is already advertising @"+data.username+".";
+      return;
+    }
+
+    if(data.type==="message"){
+      await addMessage({type:"main"},data.message);
+      return;
+    }
+
+    if(data.type==="attachment"){
+      const p=data.message;
+      const blob=bytesToBlob(p.data,p.mime);
+      const local={...p,blob};delete local.data;
+      await addMessage({type:"main"},local);
+      return;
+    }
+
+    if(data.type==="presence"){
+      systemMessage({type:"main"},"@"+data.username+" "+(data.action==="join"?"joined":"left")+" #main");
+    }
+  });
+
+  c.on("close",()=>{
+    mainRoom.ready=false;
+    $("mainPresence").classList.remove("online");
+    renderAll();
+    setTimeout(electMainHost,900+Math.random()*800);
+  });
+}
+function electMainHost(){
+  if(!peer||peer.destroyed)return;
+
+  try{mainRoom.hostPeer?.destroy()}catch{}
+  mainRoom.hostPeer=null;
+  mainRoom.ready=false;
+
+  const candidate=new Peer(MAIN_HOST_ID,{debug:0});
+  let settled=false;
+
+  candidate.on("open",()=>{
+    if(settled)return;
+    settled=true;
+    becomeMainHost(candidate);
+  });
+
+  candidate.on("error",err=>{
+    if(settled)return;
+    if(err.type==="unavailable-id"){
+      settled=true;
+      try{candidate.destroy()}catch{}
+      setTimeout(connectMainHost,100);
+    }else{
+      try{candidate.destroy()}catch{}
+      setTimeout(connectMainHost,500);
+    }
+  });
+}
+
+/* ---------- data protocol ---------- */
+async function handleData(from,data){
+  if(!data||typeof data!=="object"||data.app!==APP_PROTOCOL)return;
+
+  if(data.type==="hello"){
+    surfaceIncomingDm(from);
+    return;
+  }
+
+  if(data.type==="dm_typing"){
+    surfaceIncomingDm(from);
+    setRemoteTyping({type:"dm",id:from},from,!!data.active);
+    return;
+  }
+
+  if(data.type==="dm_ack"){
+    await setMessageStatus({type:"dm",id:from},data.messageId,"delivered");
+    return;
+  }
+
+  if(data.type==="dm_text"){
+    surfaceIncomingDm(from);
+    await addMessage({type:"dm",id:from},{
+      id:data.message.id,
+      timestamp:data.message.timestamp,
+      author:from,
+      kind:"text",
+      text:data.message.text
+    });
+    try{await sendTo(from,{type:"dm_ack",messageId:data.message.id})}catch{}
+    return;
+  }
+
+  if(data.type==="dm_attachment"){
+    surfaceIncomingDm(from);
+    const p=data.message;
+    const blob=bytesToBlob(p.data,p.mime);
+    await addMessage({type:"dm",id:from},{
+      id:p.id,timestamp:p.timestamp,author:from,kind:"attachment",
+      fileName:p.fileName,mime:p.mime,size:p.size,blob
+    });
+    try{await sendTo(from,{type:"dm_ack",messageId:p.id})}catch{}
+    return;
+  }
+
+  if(data.type==="group_invite"){
+    const g=data.group;
+    if(!g?.id||!g.members?.includes(myUsername)||cleanUsername(g.owner)!==from)return;
+    applyGroupSnapshot(g);
+    return;
+  }
+
+  if(data.type==="group_sync_request"){
+    const g=groups.get(data.groupId);
+    if(g&&g.owner===myUsername&&g.members.includes(from)){
+      await sendTo(from,{
+        type:"group_snapshot",
+        group:snapshotGroup(g),
+        messages:(g.messages||[]).filter(m=>m.kind==="text").slice(-100)
+      });
+    }
+    return;
+  }
+
+  if(data.type==="group_snapshot"){
+    if(!data.group?.id)return;
+    applyGroupSnapshot(data.group);
+    const g=groups.get(data.group.id);
+    for(const m of data.messages||[]){
+      await addMessage({type:"group",id:g.id},m);
+    }
+    return;
+  }
+
+  if(data.type==="group_typing_from_member"){
+    const g=groups.get(data.groupId);
+    if(!g||g.owner!==myUsername||!g.members.includes(from))return;
+    setRemoteTyping({type:"group",id:g.id},from,!!data.active);
+    for(const u of g.members){
+      if(u===myUsername||u===from)continue;
+      try{await sendTo(u,{type:"group_typing_delivery",groupId:g.id,username:from,active:!!data.active})}catch{}
+    }
+    return;
+  }
+
+  if(data.type==="group_typing_delivery"){
+    const g=groups.get(data.groupId);
+    if(g)setRemoteTyping({type:"group",id:g.id},data.username,!!data.active);
+    return;
+  }
+
+  if(data.type==="group_message_ack"){
+    await setMessageStatus({type:"group",id:data.groupId},data.messageId,"delivered");
+    return;
+  }
+
+  if(data.type==="group_message_from_member"){
+    const g=groups.get(data.groupId);
+    if(!g||g.owner!==myUsername||!g.members.includes(from))return;
+
+    let localMessage=data.message;
+    if(localMessage.kind==="attachment"){
+      const blob=bytesToBlob(localMessage.data,localMessage.mime);
+      localMessage={...localMessage,blob};delete localMessage.data;
+    }
+
+    await addMessage({type:"group",id:g.id},localMessage);
+    try{await sendTo(from,{type:"group_message_ack",groupId:g.id,messageId:data.message.id})}catch{}
+
+    for(const u of g.members){
+      if(u===myUsername||u===from)continue;
+      try{await sendTo(u,{type:"group_message_delivery",groupId:g.id,message:data.message})}catch{}
+    }
+    return;
+  }
+
+  if(data.type==="group_message_delivery"){
+    const g=groups.get(data.groupId);
+    if(!g||!g.members.includes(from))return;
+
+    let localMessage=data.message;
+    if(localMessage.kind==="attachment"){
+      const blob=bytesToBlob(localMessage.data,localMessage.mime);
+      localMessage={...localMessage,blob};delete localMessage.data;
+    }
+    await addMessage({type:"group",id:g.id},localMessage);
+    try{await sendTo(from,{type:"group_message_ack",groupId:g.id,messageId:data.message.id})}catch{}
+  }
+}
+
+/* ---------- file attachments ---------- */
+function attachmentKey(file){return file.name+"|"+file.size+"|"+file.lastModified}
+function clearPendingUrls(){
+  for(const x of pendingAttachments){
+    if(x.previewUrl)try{URL.revokeObjectURL(x.previewUrl)}catch{}
+  }
+}
+function renderPendingAttachments(){
+  const tray=$("pendingTray");
+  tray.innerHTML="";
+  tray.classList.toggle("hidden",pendingAttachments.length===0);
+
+  pendingAttachments.forEach((item,index)=>{
+    const card=document.createElement("div");card.className="pendingCard";
+    const preview=document.createElement("div");preview.className="pendingPreview";
+
+    if(item.previewUrl){
+      const img=document.createElement("img");img.src=item.previewUrl;preview.appendChild(img);
+    }else preview.textContent="FILE";
+
+    const meta=document.createElement("div");meta.className="pendingMeta";
+    const b=document.createElement("b");b.textContent=item.file.name;
+    const s=document.createElement("span");s.textContent=formatBytes(item.file.size);
+    meta.append(b,s);
+
+    const remove=document.createElement("button");remove.className="pendingRemove";remove.textContent="×";
+    remove.onclick=()=>{
+      if(item.previewUrl)try{URL.revokeObjectURL(item.previewUrl)}catch{}
+      pendingAttachments.splice(index,1);
+      renderPendingAttachments();
+    };
+
+    card.append(preview,meta,remove);
+    tray.appendChild(card);
+  });
+}
+function queueFiles(files){
+  const existing=new Set(pendingAttachments.map(x=>attachmentKey(x.file)));
+
+  for(const file of files){
+    if(pendingAttachments.length>=MAX_PENDING_ATTACHMENTS)break;
+    if(file.size>MAX_FILE_BYTES){
+      $("transferStatus").textContent=file.name+" is over the 12 MB limit.";
+      continue;
+    }
+    const key=attachmentKey(file);
+    if(existing.has(key))continue;
+
+    pendingAttachments.push({
+      file,
+      previewUrl:file.type.startsWith("image/")?URL.createObjectURL(file):""
+    });
+    existing.add(key);
+  }
+
+  renderPendingAttachments();
+  if(pendingAttachments.length){
+    $("transferStatus").textContent=pendingAttachments.length+" attachment"+(pendingAttachments.length===1?"":"s")+" ready";
+  }
+}
+async function sendCurrentFile(file){
+  if(!activeContext||!file)return;
+  if(file.size>MAX_FILE_BYTES){
+    $("transferStatus").textContent="Files are limited to 12 MB.";
+    return;
+  }
+
+  $("transferStatus").textContent="Preparing "+file.name+"…";
+  const data=await file.arrayBuffer();
+  const mime=file.type||"application/octet-stream";
+
+  const packetMessage={
+    id:uid("m"),
+    timestamp:Date.now(),
+    author:myUsername,
+    kind:"attachment",
+    fileName:file.name,
+    mime,
+    size:file.size,
+    data,
+    status:"sending"
+  };
+
+  const local={...packetMessage,blob:new Blob([data],{type:mime})};
+  delete local.data;
+  await addMessage(activeContext,local);
+
+  $("transferStatus").textContent="Sending "+file.name+"…";
+
+  try{
+    if(activeContext.type==="main"){
+      if(mainRoom.role==="host"){
+        broadcastMain({type:"attachment",message:packetMessage});
+        await setMessageStatus(activeContext,packetMessage.id,"delivered");
+      }else if(mainRoom.conn?.open){
+        mainRoom.conn.send({type:"attachment",message:packetMessage});
+        await setMessageStatus(activeContext,packetMessage.id,"sent");
+      }else throw new Error("main unavailable");
+    }
+
+    else if(activeContext.type==="dm"){
+      try{
+        await sendTo(activeContext.id,{type:"dm_attachment",message:packetMessage});
+        await setMessageStatus(activeContext,packetMessage.id,"sent");
+      }catch(err){
+        $("transferStatus").textContent=err?.message||"Could not connect to @"+activeContext.id;
+        throw err;
+      }
+    }
+
+    else if(activeContext.type==="group"){
+      const g=groups.get(activeContext.id);
+      let sent=0;
+      for(const u of g.members){
+        if(u===myUsername)continue;
+        try{
+          await sendTo(u,{type:"group_message_delivery",groupId:g.id,message:packetMessage});
+          sent++;
+        }catch{}
+      }
+      if(sent>0)await setMessageStatus(activeContext,packetMessage.id,"sent");
+      else throw new Error("no group peers online");
+    }
+
+    $("transferStatus").textContent="Sent "+file.name;
+  }catch{
+    await setMessageStatus(activeContext,packetMessage.id,"failed");
+    $("transferStatus").textContent="Could not deliver "+file.name;
+  }
+
+  setTimeout(()=>$("transferStatus").textContent="",2200);
+}
+async function sendComposerContent(){
+  if(!activeContext)return;
+  const hasText=!!$("messageInput").value.trim();
+  const queued=[...pendingAttachments];
+  if(!hasText&&!queued.length)return;
+
+  pendingAttachments=[];
+  renderPendingAttachments();
+
+  if(hasText)await sendCurrentText();
+
+  for(const item of queued){
+    try{await sendCurrentFile(item.file)}
+    finally{if(item.previewUrl)try{URL.revokeObjectURL(item.previewUrl)}catch{}}
+  }
+
+  $("fileInput").value="";
+  $("messageInput").focus();
+  autoGrowComposer();
+}
+
+/* ---------- sending text ---------- */
+async function sendCurrentText(){
+  if(!activeContext)return;
+  const input=$("messageInput");
+  const text=input.value.trim();
+  if(!text)return;
+
+  stopOwnTyping(activeContext);
+  input.value="";
+  autoGrowComposer();
+
+  const msg={
+    id:uid("m"),
+    timestamp:Date.now(),
+    author:myUsername,
+    kind:"text",
+    text,
+    status:"sending"
+  };
+  await addMessage(activeContext,msg);
+
+  try{
+    if(activeContext.type==="main"){
+      if(mainRoom.role==="host"){
+        broadcastMain({type:"message",message:msg});
+        await setMessageStatus(activeContext,msg.id,"delivered");
+      }else if(mainRoom.conn?.open){
+        mainRoom.conn.send({type:"message",message:msg});
+        await setMessageStatus(activeContext,msg.id,"sent");
+      }else throw new Error("main unavailable");
+    }
+
+    else if(activeContext.type==="dm"){
+      try{
+        await sendTo(activeContext.id,{type:"dm_text",message:msg});
+        await setMessageStatus(activeContext,msg.id,"sent");
+      }catch(err){
+        $("transferStatus").textContent=err?.message||"Could not connect to @"+activeContext.id;
+        setTimeout(()=>{
+          if($("transferStatus").textContent.includes(activeContext?.id||"")){
+            $("transferStatus").textContent="";
+          }
+        },2600);
+        throw err;
+      }
+    }
+
+    else if(activeContext.type==="group"){
+      const g=groups.get(activeContext.id);
+      let sent=0;
+      for(const u of g.members){
+        if(u===myUsername)continue;
+        try{
+          await sendTo(u,{type:"group_message_delivery",groupId:g.id,message:msg});
+          sent++;
+        }catch{}
+      }
+      if(sent>0)await setMessageStatus(activeContext,msg.id,"sent");
+      else throw new Error("no group peers online");
+    }
+  }catch{
+    await setMessageStatus(activeContext,msg.id,"failed");
+  }
+}
+
+/* ---------- calls ---------- */
+async function getCallMedia(kind){
+  if(!navigator.mediaDevices?.getUserMedia)throw new Error("Calls require HTTPS or localhost.");
+  return navigator.mediaDevices.getUserMedia(
+    kind==="video"?{audio:true,video:true}:{audio:true,video:false}
+  );
+}
+async function startCall(kind,userOverride=null){
+  if(activeCall||pendingCall)return;
+  const user=cleanUsername(userOverride||(activeContext?.type==="dm"?activeContext.id:""));
+  if(!user||user===myUsername)return;
+
+  if(activeContext?.type!=="dm"||activeContext.id!==user){
+    getDmMessages(user);
+    saveNetworks();
+    activeContext={type:"dm",id:user};
+    renderAll();
+  }
+
+  try{
+    await ensureConnection(user);
+    const targetPeerId=trustedPeerId(user);
+    if(!targetPeerId)throw new Error("Could not verify @"+user+"'s identity.");
+
+    const stream=await getCallMedia(kind);
+    const call=peer.call(targetPeerId,stream,{
+      metadata:{app:APP_PROTOCOL,kind:kind==="video"?"dm-video":"dm-audio",from:myUsername}
+    });
+    if(!call)throw new Error("Could not start call.");
+    attachActiveCall(call,stream,kind,user,true);
+  }catch(err){
+    systemMessage(activeContext,err.message||"Call failed.");
+  }
+}
+function handleIncomingCall(call){
+  const kind=call.metadata?.kind==="dm-video"?"video":"audio";
+  const from=cleanUsername(call.metadata?.from||legacyUsernameFromPeerId(call.peer));
+
+  const trusted=knownPeerIds.get(from)||"";
+  const advertised=onlineUsers.get(from)||"";
+
+  if(
+    !from ||
+    (trusted&&trusted!==call.peer) ||
+    (advertised&&advertised!==call.peer) ||
+    (!trusted&&!advertised) ||
+    !rememberPeerIdentity(from,call.peer)
+  ){
+    try{call.close()}catch{}
+    return;
+  }
+
+  if(!callAllowedFrom(from)){
+    try{call.close()}catch{}
+    recordCall(from,kind,"incoming","blocked");
+    return;
+  }
+
+  if(activeCall||pendingCall){try{call.close()}catch{};return}
+
+  pendingCall=call;
+  $("incomingAvatar").textContent=initial(from);
+  $("incomingName").textContent="@"+from;
+  $("incomingType").textContent=kind==="video"?"Incoming video call":"Incoming voice call";
+  $("incomingCall").dataset.kind=kind;
+  $("incomingCall").dataset.from=from;
+  $("incomingCall").classList.remove("hidden");
+
+  call.on("close",()=>{
+    if(pendingCall===call){
+      pendingCall=null;
+      $("incomingCall").classList.add("hidden");
+    }
+  });
+}
+async function acceptIncomingCall(){
+  if(!pendingCall)return;
+  const call=pendingCall;
+  const from=$("incomingCall").dataset.from;
+  const kind=$("incomingCall").dataset.kind;
+
+  try{
+    const stream=await getCallMedia(kind);
+    pendingCall=null;
+    $("incomingCall").classList.add("hidden");
+    call.answer(stream);
+
+    surfaceIncomingDm(from);
+    selectContext({type:"dm",id:from});
+    attachActiveCall(call,stream,kind,from,false);
+  }catch{
+    try{call.close()}catch{}
+    pendingCall=null;
+    $("incomingCall").classList.add("hidden");
+  }
+}
+function declineIncomingCall(){
+  if(!pendingCall)return;
+  const from=$("incomingCall").dataset.from;
+  const kind=$("incomingCall").dataset.kind;
+  try{pendingCall.close()}catch{}
+  pendingCall=null;
+  $("incomingCall").classList.add("hidden");
+  recordCall(from,kind,"incoming","declined");
+}
+function attachActiveCall(call,stream,kind,user,outgoing){
+  activeCall=call;
+  localCallStream=stream;
+  activeCallKind=kind;
+  activeCallPeer=user;
+
+  $("activeCall").classList.remove("hidden");
+  $("localVideo").srcObject=stream;
+  $("callPeer").textContent="@"+user;
+  $("callStatus").textContent=outgoing?"calling…":"connecting…";
+
+  $("audioCenter").classList.toggle("hidden",kind!=="audio");
+  $("remoteVideo").classList.toggle("hidden",kind==="audio");
+  $("localVideo").classList.toggle("hidden",kind==="audio");
+  $("cameraBtn").classList.toggle("hidden",kind==="audio");
+
+  $("audioAvatar").textContent=initial(user);
+  $("audioName").textContent="@"+user;
+  $("audioStatus").textContent=outgoing?"Calling…":"Connecting…";
+
+  call.on("stream",remote=>{
+    remoteCallStream=remote;
+    $("remoteVideo").srcObject=remote;
+    $("callStatus").textContent="connected";
+    $("audioStatus").textContent="Connected";
+  });
+
+  call.on("close",cleanupCall);
+  call.on("error",cleanupCall);
+
+  recordCall(user,kind,outgoing?"outgoing":"incoming","connected");
+}
+function cleanupCall(){
+  for(const stream of [localCallStream,remoteCallStream]){
+    if(stream)for(const track of stream.getTracks())try{track.stop()}catch{}
+  }
+
+  $("localVideo").srcObject=null;
+  $("remoteVideo").srcObject=null;
+  $("activeCall").classList.add("hidden");
+
+  activeCall=null;
+  localCallStream=null;
+  remoteCallStream=null;
+  activeCallKind=null;
+  activeCallPeer=null;
+}
+function endCall(){
+  if(activeCall)try{activeCall.close()}catch{}
+  cleanupCall();
+}
+function toggleCallMute(){
+  if(!localCallStream)return;
+  const tracks=localCallStream.getAudioTracks();
+  const enabled=tracks.some(t=>t.enabled);
+  tracks.forEach(t=>t.enabled=!enabled);
+  $("muteBtn").textContent=enabled?"UNMUTE":"MUTE";
+}
+function toggleCallCamera(){
+  if(!localCallStream)return;
+  const tracks=localCallStream.getVideoTracks();
+  const enabled=tracks.some(t=>t.enabled);
+  tracks.forEach(t=>t.enabled=!enabled);
+  $("cameraBtn").textContent=enabled?"CAMERA ON":"CAMERA OFF";
+}
+
+/* ---------- login ---------- */
+function destroyPeer(){
+  if(loginRetryTimer){clearTimeout(loginRetryTimer);loginRetryTimer=null}
+  if(peer){try{peer.destroy()}catch{}peer=null}
+  try{mainRoom?.hostPeer?.destroy()}catch{}
+  try{mainRoom?.conn?.close()}catch{}
+}
+function setLoginBusy(busy,label="CONNECTING…"){
+  loginInProgress=busy;
+  $("loginBtn").disabled=busy;
+  $("loginBtn").textContent=busy?label:"UNLOCK & GO ONLINE";
+}
+async function createPeer(username,password,retry=0){
+  username=cleanUsername(username);
+  if(!username)return;
+
+  const generation=++loginGeneration;
+  setLoginBusy(true,retry?"RESTORING…":"VERIFYING…");
+
+  if(peer){try{peer.destroy()}catch{}peer=null}
+
+  $("loginError").textContent=retry
+    ?"Restoring "+username+"… retry "+retry+"/"+MAX_RECLAIM_ATTEMPTS
+    :"";
+
+  try{
+    myIdentityKey=await deriveIdentityKey(username,password);
+  }catch{
+    setLoginBusy(false);
+    $("loginError").textContent="This browser could not derive your secure identity.";
+    return;
+  }
+
+  if(generation!==loginGeneration)return;
+
+  const verifier=await identityVerifier(myIdentityKey);
+  const savedCredential=loadCredential(username);
+
+  if(savedCredential?.verifier&&savedCredential.verifier!==verifier){
+    myIdentityKey="";
+    setLoginBusy(false);
+    $("loginError").textContent="Wrong password for @"+username+" on this browser.";
+    return;
+  }
+
+  myUsername=username;
+  myPeerId=securePeerId(myIdentityKey);
+
+  const candidate=new Peer(myPeerId,{debug:0});
+  peer=candidate;
+
+  const current=()=>peer===candidate&&generation===loginGeneration;
+
+  candidate.on("open",async()=>{
+    if(!current())return;
+
+    setLoginBusy(false);
+    saveProfile(username);
+    saveCredential(username,verifier,myPeerId);
+
+    mainRoom=createMainRoom();
+    loadNetworks();
+    loadUserSettings();
+    await loadAllMessages();
+
+    $("loginScreen").style.display="none";
+    $("app").style.display="grid";
+    $("loginError").textContent="";
+
+    updateOwnUi();
+    activeContext=null;
+    renderAll();
+    electMainHost();
+
+    for(const u of dmMessages.keys())ensureConnection(u).catch(()=>{});
+    for(const g of groups.values()){
+      if(g.owner!==myUsername)syncGroup(g.id);
+      else for(const u of g.members)if(u!==myUsername)ensureConnection(u).catch(()=>{});
+    }
+  });
+
+  candidate.on("connection",conn=>{
+    if(current())attachConnection(conn);
+    else try{conn.close()}catch{}
+  });
+
+  candidate.on("call",call=>{
+    if(!current()){try{call.close()}catch{};return}
+    if(call.metadata?.app!==APP_PROTOCOL){try{call.close()}catch{};return}
+    if(call.metadata?.kind==="dm-audio"||call.metadata?.kind==="dm-video")handleIncomingCall(call);
+    else try{call.close()}catch{}
+  });
+
+  candidate.on("disconnected",()=>{
+    if(!current()||candidate.destroyed)return;
+    $("meState").textContent="reconnecting";
+    $("meDot").classList.remove("online");
+
+    setTimeout(()=>{
+      if(current()&&candidate.disconnected&&!candidate.destroyed){
+        try{candidate.reconnect()}catch{}
+      }
+    },800);
+  });
+
+  candidate.on("error",err=>{
+    if(!current())return;
+    if(err.type==="peer-unavailable")return;
+
+    if(err.type==="unavailable-id"){
+      if(retry<MAX_RECLAIM_ATTEMPTS){
+        try{candidate.destroy()}catch{}
+        if(peer===candidate)peer=null;
+
+        const next=retry+1;
+        const delay=Math.min(800+next*350,2800);
+        $("loginError").textContent="Your secure identity is already active. Waiting for the old session to release…";
+
+        loginRetryTimer=setTimeout(()=>{
+          if(generation===loginGeneration)createPeer(username,password,next);
+        },delay);
+        return;
+      }
+
+      setLoginBusy(false);
+      $("loginError").textContent="This exact username + password identity is already active in another tab or device.";
+      return;
+    }
+
+    setLoginBusy(false);
+    $("loginError").textContent="Connection error: "+(err.type||err.message||"unknown");
+  });
+}
+function login(){
+  if(loginInProgress)return;
+
+  const u=cleanUsername($("usernameInput").value);
+  const password=$("passwordInput").value;
+
+  if(u.length<3){
+    $("loginError").textContent="Use at least 3 letters, numbers, _ or -.";
+    return;
+  }
+  if(password.length<2){
+    $("loginError").textContent="Use a password with at least 2 characters.";
+    return;
+  }
+
+  createPeer(u,password,0);
+}
+function logout(){
+  const lockedUsername=myUsername;
+
+  stopOwnTyping(activeContext);
+  clearPendingUrls();
+  pendingAttachments=[];
+  cleanupCall();
+  saveNetworks();
+  destroyPeer();
+
+  connections.clear();
+  connectionStates.clear();
+  dmMessages.clear();
+  groups.clear();
+  knownPeerIds.clear();
+  typingUsers.clear();
+  onlineUsers.clear();
+  activeContext=null;
+  mainRoom=null;
+  myUsername="";
+  myPeerId="";
+  myIdentityKey="";
+
+  $("app").style.display="none";
+  $("loginScreen").style.display="grid";
+  $("usernameInput").value=lockedUsername;
+  $("passwordInput").value="";
+  $("loginError").textContent="Locked.";
+  setLoginBusy(false);
+  $("passwordInput").focus();
+}
+async function deleteLocalData(){
+  if(!myUsername)return;
+  const username=myUsername;
+
+  if(!confirm("Delete saved conversations, groups, call history and login for @"+username+" on this browser?"))return;
+
+  try{
+    const d=await ensureDb();
+    const records=await new Promise((resolve,reject)=>{
+      const tx=d.transaction("messages","readonly");
+      const req=tx.objectStore("messages").index("owner").getAll(username);
+      req.onsuccess=()=>resolve(req.result||[]);
+      req.onerror=()=>reject(req.error);
+    });
+
+    await new Promise((resolve,reject)=>{
+      const tx=d.transaction("messages","readwrite");
+      const store=tx.objectStore("messages");
+      records.forEach(r=>store.delete(r.storageId));
+      tx.oncomplete=()=>resolve();
+      tx.onerror=()=>reject(tx.error);
+    });
+  }catch{}
+
+  localStorage.removeItem(NETWORK_KEY_PREFIX+username);
+  localStorage.removeItem(CALL_HISTORY_PREFIX+username);
+  localStorage.removeItem(SETTINGS_KEY_PREFIX+username);
+  localStorage.removeItem(CREDENTIAL_KEY_PREFIX+username);
+  forgetProfile();
+
+  stopOwnTyping(activeContext);
+  clearPendingUrls();
+  pendingAttachments=[];
+  cleanupCall();
+  destroyPeer();
+
+  connections.clear();
+  connectionStates.clear();
+  dmMessages.clear();
+  groups.clear();
+  knownPeerIds.clear();
+  onlineUsers.clear();
+  activeContext=null;
+  mainRoom=null;
+  myUsername="";
+  myPeerId="";
+  myIdentityKey="";
+
+  $("app").style.display="none";
+  $("loginScreen").style.display="grid";
+  $("usernameInput").value="";
+  $("passwordInput").value="";
+  $("loginError").textContent="";
+  setLoginBusy(false);
+}
+
+/* ---------- import / export ---------- */
+function exportBackup(){
+  saveNetworks();
+  const payload={
+    version:1,
+    username:myUsername,
+    networks:JSON.parse(localStorage.getItem(networkStorageKey())||'{"dms":[],"groups":[]}'),
+    callHistory:loadCallHistory(),
+    settings:userSettings,
+    exportedAt:Date.now()
+  };
+
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="relayless-"+myUsername+"-identity.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function importBackup(file){
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(reader.result);
+      const username=cleanUsername(data.username);
+      if(!username||!data.networks)throw new Error("Invalid Relayless backup.");
+
+      localStorage.setItem(PROFILE_KEY,JSON.stringify({username,savedAt:Date.now()}));
+      localStorage.setItem(NETWORK_KEY_PREFIX+username,JSON.stringify(data.networks));
+      if(Array.isArray(data.callHistory)){
+        localStorage.setItem(CALL_HISTORY_PREFIX+username,JSON.stringify(data.callHistory));
+      }
+      if(data.settings&&typeof data.settings==="object"){
+        localStorage.setItem(SETTINGS_KEY_PREFIX+username,JSON.stringify(data.settings));
+      }
+      location.reload();
+    }catch(err){alert(err.message)}
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- create DM/group modals ---------- */
+function showNewDmModal(){
+  showModal(`
+    <div class="loginKicker">Direct message</div>
+    <h2>Reach someone by username.</h2>
+    <p>If they are online, Relayless discovers their secure identity from the live roster. Once trusted, that identity is remembered on this device.</p>
+    <label>Username</label>
+    <input id="modalDmUser" class="field" maxlength="40" placeholder="Username">
+    <div id="modalError" class="modalError"></div>
+    <div class="modalActions">
+      <button id="cancelModal" class="btn">CANCEL</button>
+      <button id="openDmModal" class="btn primary">OPEN DM</button>
+    </div>
+  `);
+
+  $("cancelModal").onclick=closeModal;
+  $("openDmModal").onclick=()=>{
+    const u=cleanUsername($("modalDmUser").value);
+    if(!u||u===myUsername){
+      $("modalError").textContent="Enter another valid username.";
+      return;
+    }
+
+    getDmMessages(u);
+    saveNetworks();
+    closeModal();
+    selectContext({type:"dm",id:u});
+    ensureConnection(u).catch(()=>{});
+  };
+}
+function showNewGroupModal(){
+  showModal(`
+    <div class="loginKicker">Group conversation</div>
+    <h2>Create a group DM.</h2>
+    <p>Add people by username. Messages fan out directly between group members who are online.</p>
+
+    <label>Group name</label>
+    <input id="groupNameInput" class="field" maxlength="48" placeholder="Group name">
+
+    <label>Members</label>
+    <input id="groupMembersInput" class="field" placeholder="user1, user2, user3">
+
+    <div id="modalError" class="modalError"></div>
+    <div class="modalActions">
+      <button id="cancelModal" class="btn">CANCEL</button>
+      <button id="createGroupModal" class="btn primary">CREATE GROUP</button>
+    </div>
+  `);
+
+  $("cancelModal").onclick=closeModal;
+  $("createGroupModal").onclick=async()=>{
+    const name=cleanName($("groupNameInput").value)||"Group";
+    const people=[...new Set(
+      $("groupMembersInput").value.split(",").map(cleanUsername).filter(Boolean)
+    )];
+
+    const members=[...new Set([myUsername,...people.filter(x=>x!==myUsername)])];
+
+    if(members.length<2){
+      $("modalError").textContent="Add at least one other username.";
+      return;
+    }
+
+    const g={id:uid("g"),name,owner:myUsername,members,messages:[]};
+    groups.set(g.id,g);
+    saveNetworks();
+    closeModal();
+    renderAll();
+    selectContext({type:"group",id:g.id});
+
+    for(const u of members){
+      if(u===myUsername)continue;
+      try{await sendTo(u,{type:"group_invite",group:snapshotGroup(g)})}catch{}
+    }
+  };
+}
+function showSettingsModal(){
+  showModal(`
+    <div class="loginKicker">Conversation settings</div>
+    <h2>Make Relayless work your way.</h2>
+    <p>These settings stay on this browser under @${escapeHtml(myUsername)}.</p>
+
+    <div class="settingsStack">
+      <div class="settingRow">
+        <div class="settingCopy">
+          <b>Press Enter to send</b>
+          <span>Enter sends immediately. Shift+Enter always adds a new line.</span>
+        </div>
+        <label class="switch">
+          <input id="settingEnterSend" type="checkbox" ${userSettings.enterToSend?"checked":""}>
+          <span class="switchTrack"></span>
+        </label>
+      </div>
+
+      <div class="settingRow">
+        <div class="settingCopy">
+          <b>Show me as online</b>
+          <span>When off, your tab stays connected but your username is hidden from the live roster.</span>
+        </div>
+        <label class="switch">
+          <input id="settingShowOnline" type="checkbox" ${userSettings.showOnline?"checked":""}>
+          <span class="switchTrack"></span>
+        </label>
+      </div>
+
+      <div class="settingRow">
+        <div class="settingCopy">
+          <b>Show online roster</b>
+          <span>Hide or show the Online now section in your own sidebar.</span>
+        </div>
+        <label class="switch">
+          <input id="settingShowRoster" type="checkbox" ${userSettings.showOnlineRoster?"checked":""}>
+          <span class="switchTrack"></span>
+        </label>
+      </div>
+
+      <div class="settingRow">
+        <div class="settingCopy">
+          <b>Who can call me</b>
+          <span>Control which incoming voice and video calls are allowed.</span>
+        </div>
+        <select id="settingAllowCalls">
+          <option value="everyone" ${userSettings.allowCalls==="everyone"?"selected":""}>Everyone</option>
+          <option value="known" ${userSettings.allowCalls==="known"?"selected":""}>Known people</option>
+          <option value="nobody" ${userSettings.allowCalls==="nobody"?"selected":""}>Nobody</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="settingsHint">Known people means anyone already in your DMs or one of your groups.<br><br>Your username + password generate your network identity. Changing your password creates a different identity.</div>
+
+    <div class="modalActions">
+      <button id="cancelSettings" class="btn">CANCEL</button>
+      <button id="saveSettings" class="btn primary">SAVE SETTINGS</button>
+    </div>
+  `);
+
+  $("cancelSettings").onclick=closeModal;
+  $("saveSettings").onclick=()=>{
+    userSettings.enterToSend=!!$("settingEnterSend").checked;
+    userSettings.showOnline=!!$("settingShowOnline").checked;
+    userSettings.showOnlineRoster=!!$("settingShowRoster").checked;
+    userSettings.allowCalls=$("settingAllowCalls").value;
+
+    saveUserSettings();
+    updatePresenceAdvertising();
+    renderOnlineUsers();
+    closeModal();
+  };
+}
+
+function showGroupInfo(){
+  if(activeContext?.type!=="group")return;
+  const g=groups.get(activeContext.id);
+  if(!g)return;
+
+  showModal(`
+    <div class="loginKicker">Group information</div>
+    <h2>${escapeHtml(g.name)}</h2>
+    <p>Group membership is stored locally under your Relayless username, and messages go directly between online members.</p>
+
+    <label>Owner</label>
+    <div class="codeBox">@${escapeHtml(g.owner)}</div>
+
+    <label>Members</label>
+    <div class="codeBox">${g.members.map(x=>"@"+escapeHtml(x)).join(", ")}</div>
+
+    <div class="modalActions">
+      <button id="closeGroupInfo" class="btn primary">CLOSE</button>
+    </div>
+  `);
+  $("closeGroupInfo").onclick=closeModal;
+}
+
+/* ---------- rendering ---------- */
+function updateOwnUi(){
+  $("meAvatar").textContent=initial(myUsername);
+  $("meName").textContent="@"+myUsername;
+  $("meState").textContent="online";
+  $("meDot").classList.add("online");
+  $("heroName").textContent=myUsername+".";
+}
+function selectHome(){
+  stopOwnTyping(activeContext);
+  activeContext=null;
+  renderAll();
+}
+function selectContext(ctx){
+  stopOwnTyping(activeContext);
+  activeContext=ctx;
+  renderAll();
+
+  if(ctx.type==="dm")ensureConnection(ctx.id).catch(()=>{});
+  if(ctx.type==="group")syncGroup(ctx.id);
+}
+function renderOnlineUsers(){
+  const section=$("onlineSection");
+  const list=$("onlineList");
+  const count=$("onlineCount");
+  if(!section||!list||!count)return;
+
+  section.classList.toggle("hidden",!userSettings.showOnlineRoster);
+
+  const users=[...onlineUsers.keys()].sort((a,b)=>{
+    if(a===myUsername)return -1;
+    if(b===myUsername)return 1;
+    return a.localeCompare(b);
+  });
+
+  count.textContent=String(users.length);
+  list.innerHTML="";
+
+  if(!users.length){
+    const empty=document.createElement("div");
+    empty.style.cssText="padding:8px;color:#555;font:500 8px 'Fira Code',monospace;";
+    empty.textContent="Nobody visible right now";
+    list.appendChild(empty);
+    return;
+  }
+
+  for(const u of users){
+    const row=document.createElement("div");
+    row.className="onlinePerson"+(u===myUsername?" self":"");
+
+    const main=document.createElement("button");
+    main.className="onlinePersonMain";
+    main.type="button";
+
+    const dot=document.createElement("span");
+    dot.className="onlinePersonDot";
+
+    const name=document.createElement("span");
+    name.className="onlinePersonName";
+    const mismatch=hasIdentityMismatch(u);
+    name.textContent="@"+u+(mismatch?" · ID MISMATCH":"");
+
+    main.append(dot,name);
+
+    if(u===myUsername){
+      const you=document.createElement("span");
+      you.className="onlineYou";
+      you.textContent="YOU";
+      main.appendChild(you);
+      main.disabled=true;
+    }else if(mismatch){
+      main.disabled=true;
+      main.title="This username is advertising a different identity than the one this device previously trusted.";
+    }else{
+      main.onclick=()=>{
+        rememberPeerIdentity(u,onlineUsers.get(u));
+        getDmMessages(u);
+        saveNetworks();
+        selectContext({type:"dm",id:u});
+      };
+    }
+
+    row.appendChild(main);
+
+    if(u!==myUsername&&!mismatch){
+      const actions=document.createElement("div");
+      actions.className="onlineQuick";
+
+      const voice=document.createElement("button");
+      voice.type="button";
+      voice.title="Voice call @"+u;
+      voice.textContent="V";
+      voice.onclick=e=>{
+        e.stopPropagation();
+        startCall("audio",u);
+      };
+
+      const video=document.createElement("button");
+      video.type="button";
+      video.title="Video call @"+u;
+      video.textContent="▣";
+      video.onclick=e=>{
+        e.stopPropagation();
+        startCall("video",u);
+      };
+
+      actions.append(voice,video);
+      row.appendChild(actions);
+    }
+
+    list.appendChild(row);
+  }
+}
+
+function renderSidebar(){
+  $("homeNav").classList.toggle("active",!activeContext);
+  $("mainNav").classList.toggle("active",activeContext?.type==="main");
+
+  const dmList=$("dmList");dmList.innerHTML="";
+  for(const u of [...dmMessages.keys()].sort()){
+    const b=document.createElement("button");
+    b.className="navItem"+(activeContext?.type==="dm"&&activeContext.id===u?" active":"");
+
+    const icon=document.createElement("span");icon.className="navIcon";icon.textContent="@";
+    const text=document.createElement("span");text.className="navText";text.textContent=u;
+    const p=document.createElement("span");p.className="presence"+(connectionStates.get(u)==="online"?" online":"");
+
+    b.append(icon,text,p);
+    b.onclick=()=>selectContext({type:"dm",id:u});
+    dmList.appendChild(b);
+  }
+
+  const groupList=$("groupList");groupList.innerHTML="";
+  for(const g of [...groups.values()].sort((a,b)=>a.name.localeCompare(b.name))){
+    const b=document.createElement("button");
+    b.className="navItem"+(activeContext?.type==="group"&&activeContext.id===g.id?" active":"");
+
+    const icon=document.createElement("span");icon.className="navIcon";icon.textContent="#";
+    const text=document.createElement("span");text.className="navText";text.textContent=g.name;
+
+    b.append(icon,text);
+    b.onclick=()=>selectContext({type:"group",id:g.id});
+    groupList.appendChild(b);
+  }
+}
+function renderHeader(){
+  $("audioCallBtn").classList.add("hidden");
+  $("videoCallBtn").classList.add("hidden");
+  $("groupInfoBtn").classList.add("hidden");
+
+  if(!activeContext){
+    $("headerTitle").textContent="Home";
+    $("headerSubtitle").textContent="direct connection mode";
+    return;
+  }
+
+  if(activeContext.type==="main"){
+    $("headerTitle").textContent="# main";
+    $("headerSubtitle").textContent=mainRoom?.ready
+      ? (mainRoom.role==="host"?"hosting the shared P2P room":"connected to the shared P2P room")
+      : "connecting to the shared P2P room";
+    return;
+  }
+
+  if(activeContext.type==="dm"){
+    const mismatch=hasIdentityMismatch(activeContext.id);
+    const state=mismatch?"IDENTITY MISMATCH":(connectionStates.get(activeContext.id)||"offline");
+    $("headerTitle").textContent="@"+activeContext.id;
+    $("headerSubtitle").textContent=state+" · secure direct peer connection";
+    $("audioCallBtn").classList.remove("hidden");
+    $("videoCallBtn").classList.remove("hidden");
+    return;
+  }
+
+  if(activeContext.type==="group"){
+    const g=groups.get(activeContext.id);
+    $("headerTitle").textContent="# "+(g?.name||"group");
+    $("headerSubtitle").textContent=g
+      ? g.members.length+" members · owner @"+g.owner
+      : "group";
+    $("groupInfoBtn").classList.remove("hidden");
+  }
+}
+function renderView(){
+  const home=!activeContext;
+  $("homeView").style.display=home?"block":"none";
+  $("chatView").style.display=home?"none":"flex";
+}
+function renderMessages(){
+  if(!activeContext)return;
+  const box=$("chatBody");
+
+  const wasNearBottom=
+    box.scrollHeight-box.scrollTop-box.clientHeight<140;
+
+  box.innerHTML="";
+
+  const intro=document.createElement("div");intro.className="chatIntro";
+  const b=document.createElement("b");
+  const p=document.createElement("p");
+
+  if(activeContext.type==="main"){
+    b.textContent="# main";
+    p.textContent="The shared live room for everyone using this Relayless build.";
+  }else if(activeContext.type==="dm"){
+    b.textContent="@"+activeContext.id;
+    p.textContent="Direct P2P conversation. Drop files here or start a voice/video call from the top right.";
+  }else{
+    const g=groups.get(activeContext.id);
+    b.textContent="# "+(g?.name||"group");
+    p.textContent=(g?.members.length||0)+" members in this group conversation.";
+  }
+
+  intro.append(b,p);box.appendChild(intro);
+
+  const list=messagesForContext(activeContext);
+  for(const m of list){
+    if(m.system){
+      const s=document.createElement("div");s.className="systemMsg";s.textContent=m.text;box.appendChild(s);
+      continue;
+    }
+
+    const row=document.createElement("div");row.className="messageRow";
+    const avatar=document.createElement("div");avatar.className="msgAvatar";avatar.textContent=initial(m.author);
+
+    const content=document.createElement("div");
+    const head=document.createElement("div");head.className="msgHead";
+    const author=document.createElement("span");author.className="msgAuthor";
+    author.textContent="@"+m.author+(m.author===myUsername?" (you)":"");
+    const time=document.createElement("span");time.className="msgTime";time.textContent=timeLabel(m.timestamp);
+    head.append(author,time);
+    content.appendChild(head);
+
+    if(m.kind==="attachment"){
+      const wrap=document.createElement("div");wrap.className="attachmentWrap";
+
+      if(m.mime?.startsWith("image/")&&m.blob){
+        const img=document.createElement("img");img.className="attachmentImage";
+        const url=URL.createObjectURL(m.blob);
+        img.src=url;
+        img.onload=()=>setTimeout(()=>URL.revokeObjectURL(url),30000);
+        wrap.appendChild(img);
+      }else{
+        const card=document.createElement("div");card.className="fileCard";
+        const icon=document.createElement("div");icon.className="fileIcon";icon.textContent="FILE";
+
+        const meta=document.createElement("div");meta.className="fileMeta";
+        const name=document.createElement("b");name.textContent=m.fileName||"file";
+        const size=document.createElement("span");size.textContent=formatBytes(m.size);
+        meta.append(name,size);
+
+        const a=document.createElement("a");a.className="fileDownload";a.textContent="OPEN";
+        if(m.blob){
+          const url=URL.createObjectURL(m.blob);
+          a.href=url;a.download=m.fileName||"download";
+        }else{
+          a.href="#";a.onclick=e=>e.preventDefault();
+        }
+
+        card.append(icon,meta,a);wrap.appendChild(card);
+      }
+      content.appendChild(wrap);
+    }else{
+      const text=document.createElement("div");text.className="msgText";text.textContent=m.text;
+      content.appendChild(text);
+    }
+
+    if(m.author===myUsername&&m.status){
+      const d=document.createElement("div");d.className="delivery"+(m.status==="failed"?" failed":"");
+      d.textContent=m.status==="failed"?"not delivered":m.status;
+      content.appendChild(d);
+    }
+
+    row.append(avatar,content);
+    box.appendChild(row);
+  }
+
+  if(wasNearBottom){
+    requestAnimationFrame(()=>{
+      box.scrollTop=box.scrollHeight;
+    });
+  }
+}
+function renderComposer(){
+  if(!activeContext)return;
+  let enabled=false;
+  let placeholder="Message";
+
+  if(activeContext.type==="main"){
+    enabled=!!mainRoom?.ready;
+    placeholder="Message #main";
+  }else if(activeContext.type==="dm"){
+    enabled=!!peer?.open;
+    placeholder="Message @"+activeContext.id;
+  }else if(activeContext.type==="group"){
+    enabled=groups.has(activeContext.id);
+    placeholder="Message #"+(groups.get(activeContext.id)?.name||"group");
+  }
+
+  $("messageInput").disabled=!enabled;
+  $("sendBtn").disabled=!enabled;
+  $("attachBtn").disabled=!enabled;
+  $("messageInput").placeholder=placeholder;
+}
+function renderAll(){
+  renderSidebar();
+  renderOnlineUsers();
+  renderHeader();
+  renderView();
+  renderCallHistory();
+  if(activeContext){
+    renderMessages();
+    renderTypingStatus();
+    renderComposer();
+  }
+}
+
+/* ---------- composer ---------- */
+function autoGrowComposer(){
+  const input=$("messageInput");
+  input.style.height="auto";
+  input.style.height=Math.min(150,Math.max(35,input.scrollHeight))+"px";
+}
+$("messageInput").addEventListener("input",onComposerTyping);
+$("messageInput").addEventListener("keydown",e=>{
+  if(e.isComposing)return;
+
+  if(e.key==="Enter"&&!e.shiftKey&&userSettings.enterToSend){
+    e.preventDefault();
+    sendComposerContent();
+    return;
+  }
+
+  if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)&&!userSettings.enterToSend){
+    e.preventDefault();
+    sendComposerContent();
+  }
+});
+$("composer").addEventListener("submit",e=>{
+  e.preventDefault();
+  sendComposerContent();
+});
+$("attachBtn").onclick=()=>$("fileInput").click();
+$("fileInput").onchange=e=>queueFiles([...e.target.files]);
+
+for(const eventName of ["dragenter","dragover"]){
+  $("composer").addEventListener(eventName,e=>{
+    e.preventDefault();
+    $("composer").classList.add("dragActive");
+  });
+}
+for(const eventName of ["dragleave","drop"]){
+  $("composer").addEventListener(eventName,e=>{
+    e.preventDefault();
+    $("composer").classList.remove("dragActive");
+  });
+}
+$("composer").addEventListener("drop",e=>{
+  const files=[...e.dataTransfer.files];
+  if(files.length)queueFiles(files);
+});
+
+
+/* ---------- robust scrolling ---------- */
+function findScrollableAncestor(target){
+  let el=target instanceof Element?target:null;
+
+  while(el&&el!==document.body){
+    const style=getComputedStyle(el);
+    const overflowY=style.overflowY;
+    const canScrollY=(overflowY==="auto"||overflowY==="scroll")&&el.scrollHeight>el.clientHeight+1;
+
+    if(canScrollY)return el;
+    el=el.parentElement;
+  }
+
+  // Fall back to whichever major Relayless panel is currently visible.
+  if(!$("modalOverlay").classList.contains("hidden")&&$("modal").scrollHeight>$("modal").clientHeight){
+    return $("modal");
+  }
+  if($("chatView").style.display!=="none"&&$("chatBody").scrollHeight>$("chatBody").clientHeight){
+    return $("chatBody");
+  }
+  if($("homeView").style.display!=="none"&&$("homeView").scrollHeight>$("homeView").clientHeight){
+    return $("homeView");
+  }
+  const side=document.querySelector(".sideScroll");
+  if(side&&side.scrollHeight>side.clientHeight){
+    return side;
+  }
+  return null;
+}
+
+let middleScrollState=null;
+
+document.addEventListener("mousedown",e=>{
+  if(e.button!==1)return;
+
+  const scrollEl=findScrollableAncestor(e.target);
+  if(!scrollEl)return;
+
+  e.preventDefault();
+
+  middleScrollState={
+    el:scrollEl,
+    startY:e.clientY,
+    startX:e.clientX,
+    startTop:scrollEl.scrollTop,
+    startLeft:scrollEl.scrollLeft
+  };
+
+  scrollEl.classList.add("middleScrollActive");
+});
+
+document.addEventListener("mousemove",e=>{
+  if(!middleScrollState)return;
+
+  e.preventDefault();
+
+  const dy=e.clientY-middleScrollState.startY;
+  const dx=e.clientX-middleScrollState.startX;
+
+  // Slight multiplier makes middle-drag useful even on long school chats.
+  middleScrollState.el.scrollTop=middleScrollState.startTop+dy*1.7;
+
+  if(middleScrollState.el.scrollWidth>middleScrollState.el.clientWidth){
+    middleScrollState.el.scrollLeft=middleScrollState.startLeft+dx*1.4;
+  }
+});
+
+function endMiddleScroll(){
+  if(!middleScrollState)return;
+  middleScrollState.el.classList.remove("middleScrollActive");
+  middleScrollState=null;
+}
+
+document.addEventListener("mouseup",e=>{
+  if(e.button===1)endMiddleScroll();
+});
+window.addEventListener("blur",endMiddleScroll);
+
+// Prevent the browser's own middle-click auto-scroll indicator from fighting
+// Relayless' drag behavior inside scrollable panels.
+document.addEventListener("auxclick",e=>{
+  if(e.button===1&&findScrollableAncestor(e.target)){
+    e.preventDefault();
+  }
+});
+
+// Route wheel/touchpad input to the panel the user is actually looking at.
+// This intentionally performs the scroll itself instead of trusting the browser's
+// scroll target. That prevents the "scrollbar is there but nothing moves" bug.
+function currentPrimaryScroller(){
+  if(!$("modalOverlay").classList.contains("hidden")){
+    const modal=$("modal");
+    if(modal&&modal.scrollHeight>modal.clientHeight+1)return modal;
+  }
+
+  const overSidebar=document.querySelector(".sidebar:hover .sideScroll");
+  if(overSidebar&&overSidebar.scrollHeight>overSidebar.clientHeight+1)return overSidebar;
+
+  if($("chatView").style.display!=="none"){
+    const chat=$("chatBody");
+    if(chat&&chat.scrollHeight>chat.clientHeight+1)return chat;
+  }
+
+  if($("homeView").style.display!=="none"){
+    const home=$("homeView");
+    if(home&&home.scrollHeight>home.clientHeight+1)return home;
+  }
+
+  const side=$(".sideScroll");
+  if(side&&side.scrollHeight>side.clientHeight+1)return side;
+
+  return null;
+}
+
+function wheelDeltaPixels(e){
+  let dy=e.deltaY;
+  let dx=e.deltaX;
+
+  // DOM_DELTA_LINE
+  if(e.deltaMode===1){
+    dy*=34;
+    dx*=34;
+  }
+  // DOM_DELTA_PAGE
+  else if(e.deltaMode===2){
+    dy*=window.innerHeight*.85;
+    dx*=window.innerWidth*.85;
+  }
+
+  return {dx,dy};
+}
+
+document.addEventListener("wheel",e=>{
+  // Don't hijack native select/dropdown behavior.
+  if(e.target.closest("select"))return;
+
+  let scrollEl=findScrollableAncestor(e.target);
+
+  // If the element under the pointer is not itself scrollable, route the input
+  // to the active conversation/home/sidebar panel.
+  if(!scrollEl)scrollEl=currentPrimaryScroller();
+  if(!scrollEl)return;
+
+  const {dx,dy}=wheelDeltaPixels(e);
+
+  const canY=scrollEl.scrollHeight>scrollEl.clientHeight+1;
+  const canX=scrollEl.scrollWidth>scrollEl.clientWidth+1;
+
+  if(!canY&&!canX)return;
+
+  e.preventDefault();
+
+  if(canY&&dy!==0){
+    scrollEl.scrollTop+=dy;
+  }
+
+  if(canX&&dx!==0){
+    scrollEl.scrollLeft+=dx;
+  }
+}, {passive:false,capture:true});
+
+// Keyboard fallbacks are useful on school laptops too.
+document.addEventListener("keydown",e=>{
+  if(
+    e.target.matches("input, textarea, select") ||
+    e.ctrlKey || e.metaKey || e.altKey
+  )return;
+
+  const scrollEl=currentPrimaryScroller();
+  if(!scrollEl)return;
+
+  let amount=0;
+  if(e.key==="PageDown")amount=scrollEl.clientHeight*.82;
+  else if(e.key==="PageUp")amount=-scrollEl.clientHeight*.82;
+  else if(e.key==="Home"){
+    e.preventDefault();
+    scrollEl.scrollTop=0;
+    return;
+  }
+  else if(e.key==="End"){
+    e.preventDefault();
+    scrollEl.scrollTop=scrollEl.scrollHeight;
+    return;
+  }
+  else return;
+
+  e.preventDefault();
+  scrollEl.scrollTop+=amount;
+});
+
+/* ---------- buttons ---------- */
+$("loginBtn").onclick=login;
+$("usernameInput").addEventListener("keydown",e=>{
+  if(e.key==="Enter")$("passwordInput").focus();
+});
+$("passwordInput").addEventListener("keydown",e=>{
+  if(e.key==="Enter")login();
+});
+
+$("homeNav").onclick=selectHome;
+$("mainNav").onclick=()=>selectContext({type:"main"});
+$("settingsNav").onclick=showSettingsModal;
+$("homeMainBtn").onclick=()=>selectContext({type:"main"});
+
+$("newDmBtn").onclick=showNewDmModal;
+$("homeDmBtn").onclick=showNewDmModal;
+$("newGroupBtn").onclick=showNewGroupModal;
+
+$("audioCallBtn").onclick=()=>startCall("audio");
+$("videoCallBtn").onclick=()=>startCall("video");
+$("groupInfoBtn").onclick=showGroupInfo;
+
+$("acceptCallBtn").onclick=acceptIncomingCall;
+$("declineCallBtn").onclick=declineIncomingCall;
+$("endCallBtn").onclick=endCall;
+$("muteBtn").onclick=toggleCallMute;
+$("cameraBtn").onclick=toggleCallCamera;
+
+$("copyUserBtn").onclick=()=>{
+  copyText(myUsername);
+  $("copyUserBtn").textContent="COPIED";
+  setTimeout(()=>$("copyUserBtn").textContent="COPY USER",900);
+};
+$("exportBtn").onclick=exportBackup;
+$("importBtn").onclick=()=>$("importFile").click();
+$("importFile").onchange=e=>{if(e.target.files[0])importBackup(e.target.files[0])};
+$("logoutBtn").onclick=logout;
+$("deleteBtn").onclick=deleteLocalData;
+
+/* ---------- lifecycle ---------- */
+window.addEventListener("beforeunload",()=>{
+  stopOwnTyping(activeContext);
+  saveNetworks();
+  try{peer?.destroy()}catch{}
+  try{mainRoom?.hostPeer?.destroy()}catch{}
+  try{mainRoom?.conn?.close()}catch{}
+  try{localCallStream?.getTracks().forEach(t=>t.stop())}catch{}
+  clearPendingUrls();
+});
+
+if(location.protocol==="http:"&&location.hostname!=="localhost"){
+  console.warn("Voice/video calls require HTTPS hosting.");
+}
+
+const saved=loadProfile();
+if(saved?.username){
+  $("usernameInput").value=saved.username;
+  $("passwordInput").focus();
+}else{
+  $("usernameInput").focus();
+}
+})();
+</script>
+</body>
+</html>
